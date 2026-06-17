@@ -539,7 +539,7 @@
         do 70 j = 0, nangstep
 !         write(12,811) angwpm(j)*sin(scatang(j)),scatang(j)*180/pi
           write(12,811) angwpm(j),scatang(j)*180/pi
-          write(14,831) scatang(j)*180/pi, angqpm(j)
+          write(14,831) scatang(j)*180/pi, angqpm(j), angbgd(j)
    70   continue     
         write(12,812) 
         write(14,832)
@@ -590,7 +590,7 @@
  802  format(' ')
  811  format(1pe15.7,1pe15.7,1pe15.7)
  812  format(' ')
- 831  format(1pe15.7,1pe15.7)
+ 831  format(1pe15.7,1pe15.7,1pe15.7)
  832  format(' ')
 
  901  format(1pe15.7,i6,1pe15.7)
