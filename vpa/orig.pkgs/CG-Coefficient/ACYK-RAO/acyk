@@ -1,0 +1,918 @@
+ACYKANGMOM.  NEW FORTRAN PROGRAMS FOR ANGULAR MOMENTUM COEFFICIENTS.    ACYK0000
+1   K. SRINIVASA RAO, K. VENKATESH.                                     ACYK0000
+REF. IN COMP. PHYS. COMMUN. 15 (1978) 227                               ACYK0000
+/*JOBPARM LINES=4                                                       ACYK0001
+//    EXEC  FTG1CLG,PARM.FORT=BCD                                       ACYK0002
+//FORT.SYSIN  DD  *                                                     ACYK0003
+C     PROGRAM ANGMOM                                                    ACYK0004
+C    MAIN PROGRAM TO COMPUTE OLDCG=C(AJ1,AJ2,AJ3,AM1,AM2,AM3),          ACYK0005
+C    NEWCG=CF(AJ1,AJ2,AM1,AM2,AM3)AND WILLS=CW(AJ1,AJ2,AJ3,AM1,AM2,AM3),ACYK0006
+C    OLDRACA=W(A,B,C,D,E,F),RACA3F=WF(A,B,C,D,E,F)                      ACYK0007
+C    RACA4F=W4F(A,B,C,D,E,F) AND RACABZ=WBZ(A,B,C,D,E,F).               ACYK0008
+C    THE ROUTINES C,CF AND CW ARE FOR THE CLEBSCH-GORDAN COEFFICIENT.   ACYK0009
+C    THE ROUTINES W,WF,W4F AND WBZ ARE FOR THE RACAH COEFFICIENT.       ACYK0010
+C    THE ROUTINES C AND W USE THE CONVENTIONAL FORMULAE.                ACYK0011
+C    THE ROUTINES CF,WF AND W4F USE THE HYPERGEOMETRIC FUNCTIONS.       ACYK0012
+C    THE ROUTINE WF USES THE SET I OF HYPER GEOMETRIC FUNCTIONS.        ACYK0013
+C    THE ROUTINE W4F USES THE SET II OF HYPERGEOMETRIC FUNCTIONS.       ACYK0014
+C    THE ROUTINES CW AND WBZ USE THE FORMULAE GIVEN BY WILLS AND BRETZ. ACYK0015
+      IMPLICIT REAL*8(T)                                                ACYK0016
+C    ALL VARIABLE NAMES WITH T AS THE FIRST CHARACTER REFER TO TIME.    ACYK0017
+      COMMON FCT(500)                                                   ACYK0018
+C    ALL THE 500 FACTORIALS ARE COMPUTED FIRST AND SET UP AS AN ARRAY.  ACYK0019
+      FCT(1) = 0.0                                                      ACYK0020
+      FCT(2) = 0.0                                                      ACYK0021
+      DO 10 N = 3,500                                                   ACYK0022
+      FF = N-1                                                          ACYK0023
+   10 FCT(N) = FCT(N-1) + ALOG(FF)                                      ACYK0024
+      NTEST = 100                                                       ACYK0025
+      TNT = NTEST                                                       ACYK0026
+   20 READ(5,30) AJ1,AJ2,AJ3,AM1,AM2,AM3,CHECK1                         ACYK0027
+   30 FORMAT(6F6.2,3X,F3.1)                                             ACYK0028
+C    THIS CHECK1 IS FOR THE END OF DATA FOR THE C.G. COMPUTATION.       ACYK0029
+      IF(CHECK1.EQ.1.0) GO TO 80                                        ACYK0030
+      IF(CHECK1.EQ.2.0) STOP                                            ACYK0031
+      CALL CTIME(T1)                                                    ACYK0032
+      DO 40 I = 1,NTEST                                                 ACYK0033
+   40 RES1 = C(AJ1,AJ2,AJ3,AM1,AM2,AM3)                                 ACYK0034
+      CALL CTIME(T2)                                                    ACYK0035
+      TD1 = (T2-T1)/TNT                                                 ACYK0036
+C    TD1 GIVES THE AVERAGE TIME TAKEN IN HUNDREDTHS OF A SECOND FOR     ACYK0037
+C    COMPUTING THE C.G.COEFFICIENT IN THE CONVENTIONAL WAY.             ACYK0038
+      WRITE(6,50) AJ1,AJ2,AJ3,AM1,AM2,AM3,RES1,TD1                      ACYK0039
+   50 FORMAT(' OLDCG( ',3F6.2,' ; ',3F6.2, ' ) = ',E15.7,5X,D15.7)      ACYK0040
+      CALL CTIME(T3)                                                    ACYK0041
+      DO 60 J = 1,NTEST                                                 ACYK0042
+   60 RES2 = CF(AJ1,AJ2,AJ3,AM1,AM2,AM3)                                ACYK0043
+      CALL CTIME(T4)                                                    ACYK0044
+      TD2 = (T4-T3)/TNT                                                 ACYK0045
+C    TD2 GIVES THE AVERAGE TIME TAKEN IN HUNDRECTHS OF A SECOND FOR     ACYK0046
+C    COMPUTING THE C.G.COEFFICIENT USING THE GENERALIZED HYPERGEOMETRIC ACYK0047
+C    FUNCTION FORMULA.                                                  ACYK0048
+      TIMP1 = TD1/TD2                                                   ACYK0049
+C    TIMP1 GIVES THE IMPROVEMENT FACTOR DUE TO THE USE OF THE           ACYK0050
+C    NEW ROUTINE CF OVER THE CONVENTIONAL ROUTINE C.                    ACYK0051
+      WRITE(6,70)AJ1,AJ2,AJ3,AM1,AM2,AM3, RES2,TD2,TIMP1                ACYK0052
+   70 FORMAT(' NEWCG( ',3F6.2,' ; ',3F6.2,' ) = ',E15.7,2(5X,D15.7))    ACYK0053
+      CALL CTIME(T41)                                                   ACYK0054
+      DO 72 K=1,NTEST                                                   ACYK0055
+   72 RESW = CW(AJ1,AJ2,AJ3,AM1,AM2,AM3)                                ACYK0056
+      CALL CTIME(T42)                                                   ACYK0057
+      TD21 =(T42 - T41)/TNT                                             ACYK0058
+C    TD21 GIVES THE AVERAGE TIME TAKEN IN HUNDREDTHS OF A SECOND FOR    ACYK0059
+C    COMPUTING THE C.G.COEFFICIENT USING THE FORMULA GIVEN BY J.G.WILLS.ACYK0060
+      TIMP2 = TD1/TD21                                                  ACYK0061
+C    TIMP2 GIVES THE IMPROVEMENT FACTOR DUE TO THE USE OF THE           ACYK0062
+C    ROUTINE CW OVER CONVENTIONAL ROUTINE C.                            ACYK0063
+      WRITE(6,74)AJ1,AJ2,AJ3,AM1,AM2,AM3,RESW,TD21,TIMP2                ACYK0064
+   74 FORMAT(' WILLS( ',3F6.2,' ; ',3F6.2,' ) = ',E15.7,2(5X,D15.7),/)  ACYK0065
+      GO TO 20                                                          ACYK0066
+   80 READ (5,90) AJ1,AJ2,AJ3,AJ4,AJ5,AJ6,CHECK2                        ACYK0067
+   90 FORMAT(6F6.2,3X,F3.1)                                             ACYK0068
+C    THIS CHECK2 IS FOR THE END OF DATA FOR THE RACAH COEFFICIENT.      ACYK0069
+      IF(CHECK2.EQ.1.0) STOP                                            ACYK0070
+      CALL CTIME(T5)                                                    ACYK0071
+      DO 100 K= 1,NTEST                                                 ACYK0072
+  100 RES3 = W(AJ1,AJ2,AJ3,AJ4,AJ5,AJ6)                                 ACYK0073
+      CALL CTIME(T6)                                                    ACYK0074
+      TD3 = (T6 - T5)/TNT                                               ACYK0075
+C    TD3 GIVES THE AVERAGE TIME TAKEN FOR COMPUTING THE ROUTINE W.      ACYK0076
+      WRITE(6,110) AJ1,AJ2,AJ3,AJ4,AJ5,AJ6,RES3,TD3                     ACYK0077
+  110 FORMAT(' OLDRACA(',4F6.2,' ; ',2F6.2,' ) = ',E15.7,5X,D15.7)      ACYK0078
+      CALL CTIME(T7)                                                    ACYK0079
+      DO 120 L = 1,NTEST                                                ACYK0080
+  120 RES4 = WF(AJ1,AJ2,AJ3,AJ4,AJ5,AJ6)                                ACYK0081
+      CALL CTIME(T8)                                                    ACYK0082
+      TD4 = (T8 - T7)/TNT                                               ACYK0083
+C    TD4 GIVES THE AVERAGE TIME TAKEN FOR COMPUTING THE ROUTINE WF.     ACYK0084
+      TIMP3 = TD3/TD4                                                   ACYK0085
+C    TIMP3 GIVES THE IMPROVEMENT FACTOR WHEN THE WF ROUTINE IS USED     ACYK0086
+C    INSTEAD OF THE CONVENTIONAL W ROUTINE FOR THE RACAH COEFFICIENT.   ACYK0087
+      WRITE(6,130) AJ1,AJ2,AJ3,AJ4,AJ5,AJ6,RES4,TD4,TIMP3               ACYK0088
+  130 FORMAT(' RACAH3F(',4F6.2,' ; ',2F6.2,' ) = ',E15.7,2(5X,D15.7))   ACYK0089
+      CALL CTIME(T9)                                                    ACYK0090
+      DO 140 M = 1,NTEST                                                ACYK0091
+  140 RES5 = W4F(AJ1,AJ2,AJ3,AJ4,AJ5,AJ6)                               ACYK0092
+      CALL CTIME(T10)                                                   ACYK0093
+      TD5 = (T10 - T9)/TNT                                              ACYK0094
+C    TD5 GIVES THE AVERAGE TIME TAKEN FOR COMPUTING THE ROUTINE W4F.    ACYK0095
+      TIMP4 = TD3/TD5                                                   ACYK0096
+C    TIMP4 IS THE IMPROVEMENT FACTOR WHEN THE W4F ROUTINE IS USED       ACYK0097
+C    INSTEAD OF THE CONVENTIONAL W ROUTINE FOR THE RACAH COEFFICIENT    ACYK0098
+      WRITE(6,150) AJ1,AJ2,AJ3,AJ4,AJ5,AJ6,RES5,TD5,TIMP4               ACYK0099
+  150 FORMAT(' RACAH4F(',4F6.2,' ; ',2F6.2,' ) = ',E15.7,2(5X,D15.7))   ACYK0100
+       CALL CTIME(T11)                                                  ACYK0101
+      DO 170 N = 1,NTEST                                                ACYK0102
+  170 RES6 = WBZ(AJ1,AJ2,AJ3,AJ4,AJ5,AJ6)                               ACYK0103
+      CALL CTIME(T12)                                                   ACYK0104
+      TD6 = (T12 - T11)/TNT                                             ACYK0105
+C    TD6 GIVES THE AVERAGE TIME TAKEN FOR COMPUTING THE ROUTINE WBZ.    ACYK0106
+      TIMP5 = TD3/TD6                                                   ACYK0107
+C    TIMP5 IS THE IMPROVEMENT FACTOR WHEN THE WBZ ROUTINE IS USED       ACYK0108
+C    INSTEAD OF THE CONVENTIONAL W ROUTINE FOR THE RACAH COEFFICIENT    ACYK0109
+      WRITE(6,180) AJ1,AJ2,AJ3,AJ4,AJ5,AJ6,RES6,TD6,TIMP5               ACYK0110
+  180 FORMAT(' RACAHBZ(',4F6.2,' ; ',2F6.2,' ) = ',E15.7,2(5X,D15.7),/) ACYK0111
+  190 GO TO 80                                                          ACYK0112
+  200 STOP                                                              ACYK0113
+      END                                                               ACYK0114
+      FUNCTION PHASE(N)                                                 ACYK0115
+C    FUNCTION PHASE(N) IS FOR COMPUTING (-1)**N.                        ACYK0116
+      PHASE = 1.0                                                       ACYK0117
+      M = (N/2)*2                                                       ACYK0118
+      IF(M.NE.N) PHASE = -1.0                                           ACYK0119
+      RETURN                                                            ACYK0120
+      END                                                               ACYK0121
+      FUNCTION TRIA(X,Y,Z)                                              ACYK0122
+C    FUNCTION TRIA(X,Y,Z) IS FOR CHECKING THE TRIANGULAR INEQUALITY     ACYK0123
+C    CONDITION ON ANY THREE ANGULAR MOMENTA.                            ACYK0124
+      TRIA = 0.0                                                        ACYK0125
+      IF((X+Y-Z).GE.0..AND.(X-Y+Z).GE.0..AND.(-X+Y+Z).GE.0.) TRIA = 1.0 ACYK0126
+      RETURN                                                            ACYK0127
+      END                                                               ACYK0128
+      FUNCTION C(AJ1,AJ2,AJ3,AM1,AM2,AM3)                               ACYK0129
+C    FUNCTION PROGRAM FOR THE C.G.COEFFICIENT USING FORMULA(2.1) OF TEXTACYK0130
+      COMMON FCT(500)                                                   ACYK0131
+      C = 0.0                                                           ACYK0132
+      J = AJ1 + AJ2 + AJ3                                               ACYK0133
+C    THE TRIANGULAR INEQUALITY IS CHECKED FIRST.                        ACYK0134
+      CHK = TRIA(AJ1,AJ2,AJ3)                                           ACYK0135
+      IF(CHK.EQ.0.0.OR.((AM1+AM2).NE.AM3)) RETURN                       ACYK0136
+      IF((AJ1.EQ.0.0.AND.AM1.EQ.0.0).OR.(AJ2.EQ.0.0.AND.AM2.EQ.0.0))    ACYK0137
+     1     GO TO 30                                                     ACYK0138
+      IF(AJ3.EQ.0.0.AND.AM3.EQ.0.0) GO TO 40                            ACYK0139
+      JX = -AJ1 + AJ2 + AJ3                                             ACYK0140
+      JY = AJ1 - AJ2 + AJ3                                              ACYK0141
+      JZ = AJ1 + AJ2 - AJ3                                              ACYK0142
+      IF(AM1.EQ.0.0.AND.AM2.EQ.0.0) GO TO 20                            ACYK0143
+      N1 = AJ1 + AM1                                                    ACYK0144
+      N2 = AJ1 - AM1                                                    ACYK0145
+      N3 = AJ2 + AM2                                                    ACYK0146
+      N4 = AJ2 - AM2                                                    ACYK0147
+      N5 = AJ3 + AM3                                                    ACYK0148
+      N6 = AJ3 - AM3                                                    ACYK0149
+      N7 = AJ2 - AJ3 - AM1                                              ACYK0150
+      N8 = AJ1 - AJ3 + AM2                                              ACYK0151
+      CONS = FCT(N1+1)+FCT(N2+1)+FCT(N3+1)+FCT(N4+1)+FCT(N5+1)+FCT(N6+1)ACYK0152
+     1     +FCT(JX+1)+FCT(JY+1)+FCT(JZ+1)-FCT(J+2)                      ACYK0153
+      KMIN = MAX0(0,N7,N8)                                              ACYK0154
+      KMAX = MIN0(JZ,N2,N3)                                             ACYK0155
+      SUM = 0.0                                                         ACYK0156
+      DO 10 K = KMIN,KMAX                                               ACYK0157
+   10 SUM = SUM + PHASE(K)*SQRT(EXP(CONS-2.0*(FCT(K+1)+FCT(JZ-K+1)      ACYK0158
+     1     +FCT(N2-K+1)+FCT(N3-K+1)+FCT(K-N7+1)+FCT(K-N8+1))))          ACYK0159
+      C = SQRT(2.0*AJ3+1.0)*SUM                                         ACYK0160
+      RETURN                                                            ACYK0161
+C    SPECIAL VALUES OF THE CLEBSCH-GORDAN COEFFICIENT GIVEN BY (2.14).  ACYK0162
+   20 IF(PHASE(J).EQ.(-1.0)) RETURN                                     ACYK0163
+      IF(AJ1.EQ.0.0.OR.AJ2.EQ.0.0) GO TO 30                             ACYK0164
+      IF(AJ3.EQ.0.0) GO TO 40                                           ACYK0165
+      N10 = J/2                                                         ACYK0166
+      L1 = AJ1                                                          ACYK0167
+      L2 = AJ2                                                          ACYK0168
+      L3 = AJ3                                                          ACYK0169
+      N11 = (L1 + L2 - L3)/2                                            ACYK0170
+      C = PHASE(N11)*SQRT((2.0*AJ3+1.0)*EXP(FCT(JX+1)+FCT(JY+1)         ACYK0171
+     1     +FCT(JZ+1)-FCT(J+2)+2.0*(FCT(N10+1)-FCT(N10-L1+1)            ACYK0172
+     2     -FCT(N10-L2+1)-FCT(N10-L3+1))))                              ACYK0173
+      RETURN                                                            ACYK0174
+   30 C = 1.0                                                           ACYK0175
+      RETURN                                                            ACYK0176
+   40 N = AJ1 - AM1                                                     ACYK0177
+      C = PHASE(N)/SQRT(2.0*AJ1 + 1.0)                                  ACYK0178
+      RETURN                                                            ACYK0179
+      END                                                               ACYK0180
+      FUNCTION CW(AJ1,AJ2,AJ3,AM1,AM2,AM3)                              ACYK0181
+C    FUNCTION PROGRAM FOR THE C.G.COEFFICIENT USING THE FORMULA OF WILLSACYK0182
+      COMMON FCT(500)                                                   ACYK0183
+      CW = 0.0                                                          ACYK0184
+      J = AJ1 + AJ2 + AJ3                                               ACYK0185
+      CHK = TRIA(AJ1,AJ2,AJ3)                                           ACYK0186
+C    THE TRIANGULAR INEQUALITY IS CHECKED FIRST.                        ACYK0187
+      IF(CHK.EQ.0.0.OR.((AM1+AM2).NE.AM3)) RETURN                       ACYK0188
+      IF((AJ1.EQ.0.0.AND.AM1.EQ.0.0).OR.(AJ2.EQ.0.0.AND.AM2.EQ.0.0))    ACYK0189
+     1     GO TO 40                                                     ACYK0190
+      IF(AJ3.EQ.0.0.AND.AM3.EQ.0.0) GO TO 50                            ACYK0191
+      JX = -AJ1 + AJ2 + AJ3                                             ACYK0192
+      JY = AJ1 - AJ2 + AJ3                                              ACYK0193
+      JZ = AJ1 + AJ2 - AJ3                                              ACYK0194
+      IF(AM1.EQ.0.0.AND.AM2.EQ.0.0) GO TO 30                            ACYK0195
+      N1 = AJ1 + AM1                                                    ACYK0196
+      N2 = AJ1 - AM1                                                    ACYK0197
+      N3 = AJ2 + AM2                                                    ACYK0198
+      N4 = AJ2 - AM2                                                    ACYK0199
+      N5 = AJ3 + AM3                                                    ACYK0200
+      N6 = AJ3 - AM3                                                    ACYK0201
+      N7 = AJ2 - AJ3 - AM1                                              ACYK0202
+      N8 = AJ1 - AJ3 + AM2                                              ACYK0203
+      KMIN = MAX0(0,N7,N8)                                              ACYK0204
+      KMAX = MIN0(JZ,N2,N3)                                             ACYK0205
+      L = KMIN                                                          ACYK0206
+      CONST =FCT(N1+1)+FCT(N2+1)+FCT(N3+1)+FCT(N4+1)+FCT(N5+1)+FCT(N6+1)ACYK0207
+     1     +FCT(JX+1)+FCT(JY+1)+FCT(JZ+1)-FCT(J+2)-2.0*(FCT(JZ-L+1)     ACYK0208
+     2     +FCT(N2-L+1)+FCT(N3-L+1)+FCT(L-N7+1)+FCT(L-N8+1)+FCT(L+1))   ACYK0209
+      N = KMAX - KMIN + 1                                               ACYK0210
+      I = N - 1                                                         ACYK0211
+      SUM = 1.0                                                         ACYK0212
+      IA = JZ - L                                                       ACYK0213
+      IB = N2 - L                                                       ACYK0214
+      IC = N3 - L                                                       ACYK0215
+      ID = L + 1 - N7                                                   ACYK0216
+      IE = L + 1 - N8                                                   ACYK0217
+      IG = L + 1                                                        ACYK0218
+   10 AI = (IA-I)*(IB-I)*(IC-I)                                         ACYK0219
+      BIP1 = (ID+I)*(IE+I)*(IG+I)                                       ACYK0220
+      SUM = 1.0 - AI*SUM/BIP1                                           ACYK0221
+      I = I - 1                                                         ACYK0222
+      IF(I.GE.0) GO TO 10                                               ACYK0223
+      CW = PHASE(L)*SQRT((2.0*AJ3+1.0)*EXP(CONST))*SUM                  ACYK0224
+      RETURN                                                            ACYK0225
+C    SPECIAL VALUES OF THE CLEBSCH-GORDAN COEFFICIENT GIVEN BY (2.14) OFACYK0226
+   30 IF(PHASE(J).EQ.(-1.0)) RETURN                                     ACYK0227
+      IF(AJ1.EQ.0.0.OR.AJ2.EQ.0.0) GO TO 40                             ACYK0228
+      IF(AJ3.EQ.0.0) GO TO 50                                           ACYK0229
+      N10 = J/2                                                         ACYK0230
+      L1 = AJ1                                                          ACYK0231
+      L2 = AJ2                                                          ACYK0232
+      L3 = AJ3                                                          ACYK0233
+      N11 = (L1 + L2 - L3)/2                                            ACYK0234
+      CW = PHASE(N11)*SQRT((2.0*AJ3+1.0)*EXP(FCT(JX+1)+FCT(JY+1)        ACYK0235
+     1     +FCT(JZ+1)-FCT(J+2)+2.0*(FCT(N10+1)-FCT(N10-L1+1)            ACYK0236
+     2     -FCT(N10-L2+1)-FCT(N10-L3+1))))                              ACYK0237
+      RETURN                                                            ACYK0238
+   40 CW = 1.0                                                          ACYK0239
+      RETURN                                                            ACYK0240
+   50 N = AJ1 - AM1                                                     ACYK0241
+      CW = PHASE(N)/SQRT(2.0*AJ1+1.0)                                   ACYK0242
+      RETURN                                                            ACYK0243
+      END                                                               ACYK0244
+      FUNCTION CF(AJ1,AJ2,AJ3,AM1,AM2 ,AM3)                             ACYK0245
+C    FUNCTION PROGRAM FOR THE C.G. COEFFICIENT USING THE HYPERGEOMETRIC ACYK0246
+C    FUNCTION FORMULA GIVEN BY (2.8) OF TEXT.                           ACYK0247
+      COMMON FCT(500)                                                   ACYK0248
+      CF = 0.0                                                          ACYK0249
+      J = AJ1 + AJ2 + AJ3                                               ACYK0250
+C    THE TRIANGULAR INEQUALITY IS CHECKED FIRST.                        ACYK0251
+      CHK = TRIA(AJ1,AJ2,AJ3)                                           ACYK0252
+      IF(CHK.EQ.0.0.OR.((AM1+AM2).NE.AM3)) RETURN                       ACYK0253
+      IF((AJ1.EQ.0.0.AND.AM1.EQ.0.0).OR.(AJ2.EQ.0.0.AND.AM2.EQ.0.0))    ACYK0254
+     1 GO TO 120                                                        ACYK0255
+      IF(AJ3.EQ.0.0.AND.AM3.EQ.0.0) GO TO 130                           ACYK0256
+      JX = -AJ1 + AJ2 + AJ3                                             ACYK0257
+      JY = AJ1 - AJ2 + AJ3                                              ACYK0258
+      JZ = AJ1 + AJ2 - AJ3                                              ACYK0259
+      IF(AM1.EQ.0.0.AND.AM2.EQ.0.0) GO TO 110                           ACYK0260
+      JJM = AJ1 - AJ2 + AM3                                             ACYK0261
+      N1 = AJ1 + AM1                                                    ACYK0262
+      N2 = AJ1 - AM1                                                    ACYK0263
+      N3 = AJ2 + AM2                                                    ACYK0264
+      N4 = AJ2 - AM2                                                    ACYK0265
+      N5 = AJ3 - AM3                                                    ACYK0266
+      N6 = AJ3 + AM3                                                    ACYK0267
+C    THE POSITIVE NATURE OF THE DENOMINATOR PARAMETERS IS CHECKED FOR   ACYK0268
+C    THE SELECTION OF THE VALID F32 FUNCTION.                           ACYK0269
+      IF(N5.GE.N2.AND.N6.GE.N3) GO TO 20                                ACYK0270
+      IF(N1.GE.N4.AND.N2.GE.N5) GO TO 30                                ACYK0271
+      IF(N3.GE.N6.AND.N4.GE.N1) GO TO 40                                ACYK0272
+      IF(N5.GE.N4.AND.N6.GE.N1) GO TO 50                                ACYK0273
+      IF(N1.GE.N6.AND.N2.GE.N3) GO TO 60                                ACYK0274
+      IF(N5.GE.N2.AND.N4.GE.N5) GO TO 70                                ACYK0275
+   20 IA = N2                                                           ACYK0276
+      IB = N3                                                           ACYK0277
+      IC = JZ                                                           ACYK0278
+      ID = 1 + N5 - N2                                                  ACYK0279
+      IE = 1 + N6 - N3                                                  ACYK0280
+      M = N1 - N4                                                       ACYK0281
+      GO TO 80                                                          ACYK0282
+   30 IA = N4                                                           ACYK0283
+      IB = N5                                                           ACYK0284
+      IC = JX                                                           ACYK0285
+      ID = 1 + N1 - N4                                                  ACYK0286
+      IE = 1 + N2 - N5                                                  ACYK0287
+      M = N3 - N6                                                       ACYK0288
+      GO TO 80                                                          ACYK0289
+   40 IA = N6                                                           ACYK0290
+      IB = N1                                                           ACYK0291
+      IC = JY                                                           ACYK0292
+      ID = 1 + N3 - N6                                                  ACYK0293
+      IE = 1 + N4 - N1                                                  ACYK0294
+      M = N5 - N2                                                       ACYK0295
+      GO TO 80                                                          ACYK0296
+   50 IA = N4                                                           ACYK0297
+      IB = N1                                                           ACYK0298
+      IC = JZ                                                           ACYK0299
+      ID = 1 + N5 - N4                                                  ACYK0300
+      IE = 1 + N6 - N1                                                  ACYK0301
+      M = J + N3 - N2                                                   ACYK0302
+      GO TO 80                                                          ACYK0303
+   60 IA = N6                                                           ACYK0304
+      IB = N3                                                           ACYK0305
+      IC = JX                                                           ACYK0306
+      ID = 1 + N1 - N6                                                  ACYK0307
+      IE = 1 + N2 - N3                                                  ACYK0308
+      M = J + N5 - N4                                                   ACYK0309
+      GO TO 80                                                          ACYK0310
+   70 IA = N2                                                           ACYK0311
+      IB = N5                                                           ACYK0312
+      IC = JY                                                           ACYK0313
+      ID = 1 + N5 - N2                                                  ACYK0314
+      IE = 1 + N4 - N5                                                  ACYK0315
+      M = J + N1 - N6                                                   ACYK0316
+   80 F32 = 1.0                                                         ACYK0317
+      CONST =FCT(N1+1)+FCT(N2+1)+FCT(N3+1)+FCT(N4+1)+FCT(N5+1)+FCT(N6+1)ACYK0318
+     1     +FCT(JX+1)+FCT(JY+1)+FCT(JZ+1)-FCT(J+2)-2.0*(FCT(IA+1)       ACYK0319
+     2     +FCT(IB+1)+FCT(IC+1)+FCT(ID)+FCT(IE))                        ACYK0320
+C    IF ANY ONE OF THE NUMERATOR PARAMETERS IS ZERO, THEN THE VALUE OF  ACYK0321
+C    THE F32 IS SET EQUAL TO 1.0 AND THE PROGRAM SEGMENT FOR F32 IS SKIPACYK0322
+      IF ( IA.EQ.0.OR.IB.EQ.0.OR.IC.EQ.0) GO TO 100                     ACYK0323
+      N = MIN0(IA,IB,IC)                                                ACYK0324
+      IX = N - 1                                                        ACYK0325
+   90 RN = (IX-IA)*(IX-IB)*(IX-IC)                                      ACYK0326
+      RND = (IX+ID)*(IX+IE)*(IX+1)                                      ACYK0327
+      F32 = 1.0 + RN*F32/RND                                            ACYK0328
+      IX = IX - 1                                                       ACYK0329
+      IF(IX.GE.0) GO TO 90                                              ACYK0330
+  100 CF = PHASE(JJM+M)*SQRT((2.0*AJ3+1.0)*EXP(CONST))*F32              ACYK0331
+      RETURN                                                            ACYK0332
+C    SPECIAL VALUES OF THE CLEBSCH-GORDAN COEFFICIENT GIVEN BY (2.14) OFACYK0333
+  110 IF(PHASE(J).EQ.(-1.0)) RETURN                                     ACYK0334
+      IF(AJ1.EQ.0.0.OR.AJ2.EQ.0.0) GO TO 120                            ACYK0335
+      IF(AJ3.EQ.0.0) GO TO 130                                          ACYK0336
+      N10 = J/2                                                         ACYK0337
+      L1 = AJ1                                                          ACYK0338
+      L2 = AJ2                                                          ACYK0339
+      L3 = AJ3                                                          ACYK0340
+      N11 = (L1 + L2 - L3)/2                                            ACYK0341
+      CF = PHASE(N11)*SQRT((2.0*AJ3+1.0)*EXP(FCT(JX+1)+FCT(JY+1)        ACYK0342
+     1     +FCT(JZ+1)-FCT(J+2)+2.0*(FCT(N10+1)-FCT(N10-L1+1)            ACYK0343
+     2     -FCT(N10-L2+1)-FCT(N10-L3+1))))                              ACYK0344
+      RETURN                                                            ACYK0345
+  120 CF = 1.0                                                          ACYK0346
+      RETURN                                                            ACYK0347
+  130 N = AJ1 - AM1                                                     ACYK0348
+      CF = PHASE(N)/SQRT(2.0*AJ1+1.0)                                   ACYK0349
+      RETURN                                                            ACYK0350
+      END                                                               ACYK0351
+      FUNCTION W(A,B,C,D,E,F)                                           ACYK0352
+C    THE W FUNCTION EMPLOYS THE CONVENTIONAL SINGLE SUM SERIES FOR THE  ACYK0353
+C    RACAH COEFFICIENT COMPUTATION GIVEN BY (2.16) OF TEXT.             ACYK0354
+      COMMON FCT(500)                                                   ACYK0355
+      AF(X) = SQRT(2.0*X + 1.0)                                         ACYK0356
+      W = 0.0                                                           ACYK0357
+      J1 = A + B + C + D                                                ACYK0358
+C    THE TRIANGULAR INEQUALITIES ARE CHECKED FIRST.                     ACYK0359
+      T1 = TRIA(A,B,E)                                                  ACYK0360
+      IF(T1.EQ.0.0) RETURN                                              ACYK0361
+       T2 = TRIA(C,D,E)                                                 ACYK0362
+      IF(T2.EQ.0.0) RETURN                                              ACYK0363
+      T3 = TRIA(A,C,F)                                                  ACYK0364
+      IF(T3.EQ.0.0) RETURN                                              ACYK0365
+      T4 = TRIA(B,D,F)                                                  ACYK0366
+      IF(T4.EQ.0.0) RETURN                                              ACYK0367
+      IF(B.EQ.0.OR.C.EQ.0.OR.E.EQ.0) GO TO 20                           ACYK0368
+      IF(A.EQ.0.OR.D.EQ.0.OR.F.EQ.0) GO TO 30                           ACYK0369
+      I1 = A + B + E                                                    ACYK0370
+      I2 = C + D + E                                                    ACYK0371
+      I3 = A + C + F                                                    ACYK0372
+      I4 = B + D + F                                                    ACYK0373
+      J2 = A + D + E + F                                                ACYK0374
+      J3 = B + C + E + F                                                ACYK0375
+      IMAX = MAX0(I1,I2,I3,I4)                                          ACYK0376
+      JMIN = MIN0(J1,J2,J3)                                             ACYK0377
+      I1X = -A + B + E                                                  ACYK0378
+      I1Y = A - B + E                                                   ACYK0379
+      I1Z = A + B - E                                                   ACYK0380
+      I2X = -C + D + E                                                  ACYK0381
+      I2Y = C - D + E                                                   ACYK0382
+      I2Z = C + D - E                                                   ACYK0383
+      I3X = -A + C + F                                                  ACYK0384
+      I3Y = A - C + F                                                   ACYK0385
+      I3Z = A + C - F                                                   ACYK0386
+      I4X = -B + D + F                                                  ACYK0387
+      I4Y = B - D + F                                                   ACYK0388
+      I4Z = B + D - F                                                   ACYK0389
+       CONST  = 0.5*(FCT(I1X+1)+FCT(I1Y+1)+FCT(I1Z+1)-FCT(I1+2)         ACYK0390
+     1     +FCT(I2X+1)+FCT(I2Y+1)+FCT(I2Z+1)-FCT(I2+2)                  ACYK0391
+     2     +FCT(I3X+1)+FCT(I3Y+1)+FCT(I3Z+1)-FCT(I3+2)                  ACYK0392
+     3     +FCT(I4X+1)+FCT(I4Y+1)+FCT(I4Z+1)-FCT(I4+2))                 ACYK0393
+      SUM = 0.0                                                         ACYK0394
+      I = IMAX                                                          ACYK0395
+   10 SUM = SUM + PHASE(I)*EXP(CONST+FCT(I+2)-FCT(I-I1+1)-FCT(I-I2+1)   ACYK0396
+     1     -FCT(I-I3+1)-FCT(I-I4+1)-FCT(J1-I+1)-FCT(J2-I+1)-FCT(J3-I+1))ACYK0397
+      I = I + 1                                                         ACYK0398
+      IF(I.LE.JMIN) GO TO 10                                            ACYK0399
+      W = PHASE(J1)*SUM                                                 ACYK0400
+      RETURN                                                            ACYK0401
+C    SPECIAL VALUES OF THE RACAH COEFFICIENT GIVEN BY (2.33) OF TEXT.   ACYK0402
+   20 N = B + C + E + F                                                 ACYK0403
+      W = PHASE(J1 + N)/(AF(A)*AF(D))                                   ACYK0404
+      RETURN                                                            ACYK0405
+   30 N = A + D + E + F                                                 ACYK0406
+      W = PHASE(J1 + N)/(AF(B)*AF(C))                                   ACYK0407
+      RETURN                                                            ACYK0408
+      END                                                               ACYK0409
+      FUNCTION WF(A,B,C,D,E,F)                                          ACYK0410
+C    THE WF FUNCTION EMPLOYS THE SET I OF THREE HYPERGEOMETRIC FUNCTIONSACYK0411
+C    FOR THE RACAH COEFFICIENT GIVEN BY (2.4) AND (2.18) TO (2.22).     ACYK0412
+      COMMON FCT(500)                                                   ACYK0413
+      AF(X) = SQRT(2.0*X + 1.0)                                         ACYK0414
+      WF = 0.0                                                          ACYK0415
+      M = A + B + C + D                                                 ACYK0416
+C    THE TRIANGULAR INEQUALITIES ARE CHECKED FIRST.                     ACYK0417
+      CHK1 = TRIA(A,B,E)                                                ACYK0418
+      IF(CHK1.EQ.0.0) RETURN                                            ACYK0419
+      CHK2 = TRIA(C,D,E)                                                ACYK0420
+      IF(CHK2.EQ.0.0) RETURN                                            ACYK0421
+      CHK3 = TRIA(A,C,F)                                                ACYK0422
+      IF(CHK3.EQ.0.0) RETURN                                            ACYK0423
+      CHK4 = TRIA(B,D,F)                                                ACYK0424
+      IF(CHK4.EQ.0.0) RETURN                                            ACYK0425
+      IF(B.EQ.0.0.OR.C.EQ.0.0.OR.E.EQ.0.0) GO TO 70                     ACYK0426
+      IF(A.EQ.0.0.OR.D.EQ.0.0.OR.F.EQ.0.0) GO TO 80                     ACYK0427
+      D1 = E + F - A - D                                                ACYK0428
+      D2 = E + F - B - C                                                ACYK0429
+C    THE POSITIVE NATURE OF THE DENOMINATOR PARAMETERS (D1,D2,D3) IS    ACYK0430
+C    CHECKED TO ENABLE THE SELECTION OF THE VALID F43 FUNCTION.         ACYK0431
+      IF(D1.GE.0.0.AND.D2.GE.0.0) GO TO 10                              ACYK0432
+      D3 = A + D - B - C                                                ACYK0433
+      IF(D1.LE.0.0.AND.D3.GE.0.0) GO TO 20                              ACYK0434
+      IF(D2.LE.0.0.AND.D3.LE.0.0) GO TO 30                              ACYK0435
+C    THE NUMERATOR (N2 TO N5) AND DENOMINATOR (N1,N6,N7) PARAMETERS OF TACYK0436
+C    F43 GIVEN BY (2.20) OF TEXT.                                       ACYK0437
+   10 N1 = A + B + C + D + 1.0                                          ACYK0438
+      N2 = A + B - E                                                    ACYK0439
+      N3 = C + D - E                                                    ACYK0440
+      N4 = A + C - F                                                    ACYK0441
+      N5 = B + D - F                                                    ACYK0442
+      N6 = D1 + 1.0                                                     ACYK0443
+      N7 = D2 + 1.0                                                     ACYK0444
+      GO TO 40                                                          ACYK0445
+C    THE NUMERATOR AND DENOMINATOR PARAMETERS OF THE F43 GIVEN BY (2.21)ACYK0446
+   20 N1 = B + C + E + F + 1.0                                          ACYK0447
+      N2 = B + F - D                                                    ACYK0448
+      N3 = B + E - A                                                    ACYK0449
+      N4 = C + E - D                                                    ACYK0450
+      N5 = C + F - A                                                    ACYK0451
+      N6 = -D1 + 1.0                                                    ACYK0452
+      N7 = D3 + 1.0                                                     ACYK0453
+      GO TO 40                                                          ACYK0454
+C    THE NUMERATOR AND DENOMINATOR PARAMETERS OF THE F43 GIVEN BY (2.22)ACYK0455
+   30 N1 = A + D + E + F + 1.0                                          ACYK0456
+      N2 = A + E - B                                                    ACYK0457
+      N3 = D + F - B                                                    ACYK0458
+      N4 = A + F - C                                                    ACYK0459
+      N5 = E + D - C                                                    ACYK0460
+      N6 = -D2 + 1.0                                                    ACYK0461
+      N7 = -D3 + 1.0                                                    ACYK0462
+   40 F43 = 1.0                                                         ACYK0463
+      I1 = A + B + E                                                    ACYK0464
+      I2 = C + D + E                                                    ACYK0465
+      I3 = A + C + F                                                    ACYK0466
+      I4 = B + D + F                                                    ACYK0467
+      I1X = -A + B + E                                                  ACYK0468
+      I1Y = A - B + E                                                   ACYK0469
+      I1Z = A + B - E                                                   ACYK0470
+      I2X = -C + D + E                                                  ACYK0471
+      I2Y = C - D + E                                                   ACYK0472
+      I2Z = C + D - E                                                   ACYK0473
+      I3X = -A + C + F                                                  ACYK0474
+      I3Y = A - C + F                                                   ACYK0475
+      I3Z = A + C - F                                                   ACYK0476
+      I4X = -B + D + F                                                  ACYK0477
+      I4Y = B - D + F                                                   ACYK0478
+      I4Z = B + D - F                                                   ACYK0479
+       CONST  = 0.5*(FCT(I1X+1)+FCT(I1Y+1)+FCT(I1Z+1)-FCT(I1+2)         ACYK0480
+     1     +FCT(I2X+1)+FCT(I2Y+1)+FCT(I2Z+1)-FCT(I2+2)                  ACYK0481
+     2     +FCT(I3X+1)+FCT(I3Y+1)+FCT(I3Z+1)-FCT(I3+2)                  ACYK0482
+     3     +FCT(I4X+1)+FCT(I4Y+1)+FCT(I4Z+1)-FCT(I4+2))                 ACYK0483
+C    IF ANY ONE OR MORE OF THE NUMERATOR PARAMETERS IS ZERO, THEN THE   ACYK0484
+C    VALUE OF F43 IS SET EQUAL TO 1.0 AND THE PROGRAM SEGMENT FOR       ACYK0485
+C    THE F43 IS CONVENIENTLY SKIPPED.                                   ACYK0486
+      IF(N2.EQ.0.OR.N3.EQ.0.OR.N4.EQ.0.OR.N5.EQ.0) GO TO 60             ACYK0487
+      N = MIN0(N2,N3,N4,N5)                                             ACYK0488
+      IX = N - 1                                                        ACYK0489
+   50 RN = (IX-N2)*(IX-N3)*(IX-N4)*(IX-N5)                              ACYK0490
+      RND = (IX-N1)*(IX+N6)*(IX+N7)*(IX+1)                              ACYK0491
+      F43 = 1.0 + F43*RN/RND                                            ACYK0492
+      IX = IX - 1                                                       ACYK0493
+      IF(IX.GE.0) GO TO 50                                              ACYK0494
+   60 WF = PHASE(M+N1-1)*F43*EXP(CONST+FCT(N1+1)-FCT(N2+1)              ACYK0495
+     1     -FCT(N3+1)-FCT(N4+1)-FCT(N5+1)-FCT(N6)-FCT(N7))              ACYK0496
+      RETURN                                                            ACYK0497
+C    SPECIAL VALUES OF THE RACAH COEFFICIENT GIVEN BY (2.33) OF TEXT.   ACYK0498
+   70 N = B + C + E + F                                                 ACYK0499
+      WF = PHASE(M+N)/(AF(A)*AF(D))                                     ACYK0500
+      RETURN                                                            ACYK0501
+   80 N = A + D + E + F                                                 ACYK0502
+      WF = PHASE(M+N)/(AF(B)*AF(C))                                     ACYK0503
+      RETURN                                                            ACYK0504
+      END                                                               ACYK0505
+      FUNCTION W4F(A,B,C,D,E,F)                                         ACYK0506
+C    THE ROUTINE W4F EMPLOYS THE SET II OF FOUR HYPERGEOMETRIC FUNCTIONSACYK0507
+C    FOR RACAH COEFFICIENT GIVEN BY (2.4), (2.18) AND (2.23) TO (2.27). ACYK0508
+      COMMON FCT (500)                                                  ACYK0509
+      AF(X) = SQRT(2.0*X+1.0)                                           ACYK0510
+      W4F = 0.0                                                         ACYK0511
+      M = A + B + C + D                                                 ACYK0512
+C    THE TRIANGULAR INEQUALITIES ARE CHECKED FIRST.                     ACYK0513
+      CHK1 = TRIA(A,B,E)                                                ACYK0514
+      IF(CHK1.EQ.0.0) RETURN                                            ACYK0515
+      CHK2 = TRIA(C,D,E)                                                ACYK0516
+      IF(CHK2.EQ.0.0) RETURN                                            ACYK0517
+      CHK3 = TRIA(A,C,F)                                                ACYK0518
+      IF(CHK3.EQ.0.0) RETURN                                            ACYK0519
+      CHK4 = TRIA(B,D,F)                                                ACYK0520
+      IF(CHK4.EQ.0.0) RETURN                                            ACYK0521
+      IF (B.EQ.0.0.OR.C.EQ.0.0.OR.E.EQ.0.0) GO TO 80                    ACYK0522
+      IF (A.EQ.0.0.OR.D.EQ.0.0.OR.F.EQ.0.0) GO TO 90                    ACYK0523
+      D1 = A + B - C - D                                                ACYK0524
+      D2 = A + E - D - F                                                ACYK0525
+      D3 = B + E - C - F                                                ACYK0526
+C    THE POSITIVE NATURE OF THE DENOMINATOR PARAMETERS (D1 TO D6)       ACYK0527
+C    IS CHECKED TO ENABLE THE SELECTION OF THE VALID F43 FUNCTION.      ACYK0528
+      IF(D1.GE.0.0.AND.D2.GE.0.0.AND.D3.GE.0.0) GO TO 10                ACYK0529
+      D4 = C + E - B - F                                                ACYK0530
+      D5 = D + E - A - F                                                ACYK0531
+      IF (D1.LE.0.0.AND.D4.GE.0.0.AND.D5.GE.0.0) GO TO 20               ACYK0532
+      D6 = A + C - B - D                                                ACYK0533
+      IF(D6.GE.0.0.AND.D5.LE.0.0.AND.D3.LE.0.0) GO TO 30                ACYK0534
+      IF(D6.LE.0.0.AND.D4.LE.0.0.AND.D2.LE.0.0) GO TO 40                ACYK0535
+C    THE NUMERATOR  (N1 TO N4) AND DENOMINATOR (N5 TO N7) PARAMETERS    ACYK0536
+C    OF THE F43 FUNCTION GIVEN BY (2.24) OF TEXT.                       ACYK0537
+   10 N1 = A + B + E + 2.0                                              ACYK0538
+      N2 = C + F - A                                                    ACYK0539
+      N3 = D + F - B                                                    ACYK0540
+      N4 = C + D - E                                                    ACYK0541
+      N5 = D1 + 1.0                                                     ACYK0542
+      N6 = D2 + 1.0                                                     ACYK0543
+      N7 = D3 + 1.0                                                     ACYK0544
+      GO TO 50                                                          ACYK0545
+C    THE NUMERATOR AND DENOMINATOR PARAMETERS OF THE F43 GIVEN BY (2.25)ACYK0546
+   20 N1 = C + D + E + 2.0                                              ACYK0547
+      N2 = A + F - C                                                    ACYK0548
+      N3 = B + F - D                                                    ACYK0549
+      N4 = A + B - E                                                    ACYK0550
+      N5 = -D1 + 1.0                                                    ACYK0551
+      N6 = D4 + 1.0                                                     ACYK0552
+      N7 = D5 + 1.0                                                     ACYK0553
+      GO TO 50                                                          ACYK0554
+C    THE NUMERATOR AND DENOMINATOR PARAMETERS OF THE F43 GIVEN BY (2.26)ACYK0555
+   30 N1 = A + C + F + 2.0                                              ACYK0556
+      N2 = D + E - C                                                    ACYK0557
+      N3 = B + E - A                                                    ACYK0558
+      N4 = B + D - F                                                    ACYK0559
+      N5 = D6 + 1.0                                                     ACYK0560
+      N6 = -D5 + 1.0                                                    ACYK0561
+      N7 = -D3 + 1.0                                                    ACYK0562
+      GO TO 50                                                          ACYK0563
+C    THE NUMERATOR AND DENOMINATOR PARAMETERS OF THE F43 GIVEN BY (2.27)ACYK0564
+   40 N1 = B + D + F + 2.0                                              ACYK0565
+      N2 = A + E - B                                                    ACYK0566
+      N3 = C + E - D                                                    ACYK0567
+      N4 = A + C - F                                                    ACYK0568
+      N5 = -D6 + 1.0                                                    ACYK0569
+      N6 = -D4 + 1.0                                                    ACYK0570
+      N7 = -D2 + 1.0                                                    ACYK0571
+   50 F43 = 1.0                                                         ACYK0572
+      I1 = A + B + E                                                    ACYK0573
+      I2 = C + D + E                                                    ACYK0574
+      I3 = A  +C + F                                                    ACYK0575
+      I4 = B + D + F                                                    ACYK0576
+      I1X = -A + B + E                                                  ACYK0577
+      I1Y = A - B + E                                                   ACYK0578
+      I1Z = A + B - E                                                   ACYK0579
+      I2X = -C + D + E                                                  ACYK0580
+      I2Y = C - D + E                                                   ACYK0581
+      I2Z = C + D - E                                                   ACYK0582
+      I3X = -A + C + F                                                  ACYK0583
+      I3Y = A - C + F                                                   ACYK0584
+      I3Z = A + C - F                                                   ACYK0585
+      I4X = - B + D + F                                                 ACYK0586
+      I4Y = B - D + F                                                   ACYK0587
+      I4Z = B + D - F                                                   ACYK0588
+       CONST  = 0.5*(FCT(I1X+1)+FCT(I1Y+1)+FCT(I1Z+1)-FCT(I1+2)         ACYK0589
+     1     +FCT(I2X+1)+FCT(I2Y+1)+FCT(I2Z+1)-FCT(I2+2)                  ACYK0590
+     2     +FCT(I3X+1)+FCT(I3Y+1)+FCT(I3Z+1)-FCT(I3+2)                  ACYK0591
+     3     +FCT(I4X+1)+FCT(I4Y+1)+FCT(I4Z+1)-FCT(I4+2))                 ACYK0592
+C    IF ANY ONE OF THE NUMERATOR PARAMETERS IS ZERO, THEN THE VALUE OF TACYK0593
+C    F43 IS SET EQUAL TO 1.0 AND THE PROGRAM SEGMENT FOR COMPUTING THE  ACYK0594
+C    F43 IS CONVENIENTLY SKIPPED.                                       ACYK0595
+      IF(N2.EQ.0.OR.N3.EQ.0.OR.N4.EQ.0) GO TO 70                        ACYK0596
+      N = MIN0(N2,N3,N4)                                                ACYK0597
+      IX = N - 1                                                        ACYK0598
+   60 RN = (IX+N1)*(IX-N2)*(IX-N3)*(IX-N4)                              ACYK0599
+      RND = (IX+N5)*(IX+N6)*(IX+N7)*(IX+1)                              ACYK0600
+      F43 = 1.0 + F43*RN/RND                                            ACYK0601
+      IX = IX - 1                                                       ACYK0602
+      IF(IX.GE.0) GO TO 60                                              ACYK0603
+   70 W4F = PHASE(M+N1-2)*F43*EXP(CONST+FCT(N1)-FCT(N2+1)               ACYK0604
+     1     -FCT(N3+1)-FCT(N4+1)-FCT(N5)-FCT(N6)-FCT(N7))                ACYK0605
+      RETURN                                                            ACYK0606
+C    SPECIAL VALUES OF THE RACAH COEFFICIENT GIVEN BY (2.33) OF TEXT.   ACYK0607
+   80 N = B + C + E + F                                                 ACYK0608
+      W4F = PHASE(M+N)/(AF(A)*AF(D))                                    ACYK0609
+      RETURN                                                            ACYK0610
+   90 N = A + D + E + F                                                 ACYK0611
+      W4F = PHASE(M+N)/(AF(B)*AF(C))                                    ACYK0612
+      RETURN                                                            ACYK0613
+      END                                                               ACYK0614
+      FUNCTION WBZ(A,B,C,D,E,F)                                         ACYK0615
+C    THE WBZ FUNCTION EMPLOYS THE EXPRESSION OF V.BRETZ FOR THE RACAH   ACYK0616
+C    COEFFICIENT COMPUTATION                                            ACYK0617
+      COMMON FCT(500)                                                   ACYK0618
+      AF(X) = SQRT(2.0*X + 1.0)                                         ACYK0619
+      WBZ = 0.0                                                         ACYK0620
+      J1 = A + B + C + D                                                ACYK0621
+C    THE TRIANGULAR INEQUALITIES ARE CHECKED FIRST.                     ACYK0622
+      CHK1 = TRIA(A,B,E)                                                ACYK0623
+      IF(CHK1.EQ.0.0) RETURN                                            ACYK0624
+      CHK2 = TRIA(C,D,E)                                                ACYK0625
+      IF(CHK2.EQ.0.0) RETURN                                            ACYK0626
+      CHK3 = TRIA(A,C,F)                                                ACYK0627
+      IF(CHK3.EQ.0.0) RETURN                                            ACYK0628
+      CHK4 = TRIA(B,D,F)                                                ACYK0629
+      IF(CHK4.EQ.0.0) RETURN                                            ACYK0630
+      IF(B.EQ.0.0.OR.C.EQ.0.0.OR.E.EQ.0.0) GO TO 20                     ACYK0631
+      IF(A.EQ.0.0.OR.D.EQ.0.0.OR.F.EQ.0.0) GO TO 30                     ACYK0632
+      I1 = A + B + E                                                    ACYK0633
+      I2 = C + D + E                                                    ACYK0634
+      I3 = A + C + F                                                    ACYK0635
+      I4 = B + D + F                                                    ACYK0636
+      J2 = A + D + E + F                                                ACYK0637
+      J3 = B + C + E + F                                                ACYK0638
+      L = MAX0(I1,I2,I3,I4,-1)                                          ACYK0639
+      LMAX = MIN0(J1,J2,J3)                                             ACYK0640
+      N = LMAX - L + 1                                                  ACYK0641
+      I1X = - A + B + E                                                 ACYK0642
+      I1Y = A - B + E                                                   ACYK0643
+      I1Z = A + B - E                                                   ACYK0644
+      I2X = - C + D + E                                                 ACYK0645
+      I2Y = C - D + E                                                   ACYK0646
+      I2Z = C + D - E                                                   ACYK0647
+      I3X = - A + C + F                                                 ACYK0648
+      I3Y = A - C + F                                                   ACYK0649
+      I3Z = A + C - F                                                   ACYK0650
+      I4X = - B + D + F                                                 ACYK0651
+      I4Y = B - D + F                                                   ACYK0652
+      I4Z = B + D - F                                                   ACYK0653
+      CONST = 0.5*(FCT(I1X+1)+FCT(I1Y+1)+FCT(I1Z+1)-FCT(I1+2)+FCT(I2X+1)ACYK0654
+     1     +FCT(I2Y+1)+FCT(I2Z+1)-FCT(I2+2)+FCT(I3X+1)+FCT(I3Y+1)       ACYK0655
+     2     +FCT(I3Z+1)-FCT(I3+2)+FCT(I4X+1)+FCT(I4Y+1)+FCT(I4Z+1)       ACYK0656
+     3     -FCT(I4+2))+FCT(L+2)-FCT(J1-L+1)-FCT(J2-L+1)-FCT(J3-L+1)     ACYK0657
+     4     -FCT(L-I1+1)-FCT(L-I2+1)-FCT(L-I3+1)-FCT(L-I4+1)             ACYK0658
+      SUM = 1.0                                                         ACYK0659
+      I = N - 1                                                         ACYK0660
+      N1 = L + 2                                                        ACYK0661
+      N2 = J1 - L                                                       ACYK0662
+      N3 = J2 - L                                                       ACYK0663
+      N4 = J3 - L                                                       ACYK0664
+      N5 = L + 1 - I1                                                   ACYK0665
+      N6 = L + 1 - I2                                                   ACYK0666
+      N7 = L + 1 - I3                                                   ACYK0667
+      N8 = L + 1 - I4                                                   ACYK0668
+   10 AI = (N2-I)*(N3-I)*(N4-I)                                         ACYK0669
+      BIP1 = (N5+I)*(N6+I)*(N7+I)*(N8+I)                                ACYK0670
+      CIP1 = N1 + I                                                     ACYK0671
+      SUM = 1.0 - CIP1*AI*SUM/BIP1                                      ACYK0672
+      I = I - 1                                                         ACYK0673
+      IF(I.GE.0) GO TO 10                                               ACYK0674
+      WBZ = PHASE(J1+L)*EXP(CONST)*SUM                                  ACYK0675
+      RETURN                                                            ACYK0676
+C    SPECIAL VALUES OF THE RACAH COEFFICIENT GIVEN BY (2.33) OF TEXT.   ACYK0677
+   20 N = B + C + E + F                                                 ACYK0678
+      WBZ = PHASE(J1+N)/(AF(A)*AF(D))                                   ACYK0679
+      RETURN                                                            ACYK0680
+   30 N = A + D + E + F                                                 ACYK0681
+      WBZ = PHASE(J1+N)/(AF(B)*AF(C))                                   ACYK0682
+      RETURN                                                            ACYK0683
+      END                                                               ACYK0684
+//GO.SYSIN   DD  *                                                      ACYK0685
+  4.0   4.0   0.0   0.0   0.0   0.0                                     ACYK0686
+  4.0   4.0   1.0   0.0   0.0   0.0                                     ACYK0687
+  4.0   4.0   2.0   0.0   0.0   0.0                                     ACYK0688
+  4.0   4.0   3.0   0.0   0.0   0.0                                     ACYK0689
+  4.0   4.0   4.0   0.0   0.0   0.0                                     ACYK0690
+  4.0   4.0   5.0   0.0   0.0   0.0                                     ACYK0691
+  4.0   4.0   6.0   0.0   0.0   0.0                                     ACYK0692
+  4.0   4.0   7.0   0.0   0.0   0.0                                     ACYK0693
+  4.0   4.0   8.0   0.0   0.0   0.0                                     ACYK0694
+  2.5   3.5   2.0  -2.5   0.5  -2.0                                     ACYK0695
+  2.5   3.5   2.0  -2.5   1.5  -1.0                                     ACYK0696
+  2.5   3.5   2.0  -2.5   2.5   0.0                                     ACYK0697
+  2.5   3.5   2.0  -2.5   3.5   1.0                                     ACYK0698
+  2.5   3.5   2.0  -1.5  -0.5  -2.0                                     ACYK0699
+  2.5   3.5   2.0  -1.5   0.5  -1.0                                     ACYK0700
+  2.5   3.5   2.0  -1.5   1.5   0.0                                     ACYK0701
+  2.5   3.5   2.0  -1.5   2.5   1.0                                     ACYK0702
+  2.5   3.5   2.0  -1.5   3.5   2.0                                     ACYK0703
+  2.5   3.5   2.0  -0.5  -1.5  -2.0                                     ACYK0704
+  2.5   3.5   2.0  -0.5  -0.5  -1.0                                     ACYK0705
+  2.5   3.5   2.0  -0.5   0.5   0.0                                     ACYK0706
+  2.5   3.5   2.0  -0.5   1.5   1.0                                     ACYK0707
+  2.5   3.5   2.0  -0.5   2.5   2.0                                     ACYK0708
+  2.5   3.5   2.0   0.5  -2.5  -2.0                                     ACYK0709
+  2.5   3.5   2.0   0.5  -1.5  -1.0                                     ACYK0710
+  2.5   3.5   2.0   0.5  -0.5   0.0                                     ACYK0711
+  2.5   3.5   2.0   0.5   0.5   1.0                                     ACYK0712
+  2.5   3.5   2.0   0.5   1.5   2.0                                     ACYK0713
+  2.5   3.5   2.0   1.5  -3.5  -2.0                                     ACYK0714
+  2.5   3.5   2.0   1.5  -2.5  -1.0                                     ACYK0715
+  2.5   3.5   2.0   1.5  -1.5   0.0                                     ACYK0716
+  2.5   3.5   2.0   1.5  -0.5   1.0                                     ACYK0717
+  2.5   3.5   2.0   1.5   0.5   2.0                                     ACYK0718
+  2.5   3.5   2.0   2.5  -3.5  -1.0                                     ACYK0719
+  2.5   3.5   2.0   2.5  -2.5   0.0                                     ACYK0720
+  2.5   3.5   2.0   2.5  -1.5   1.0                                     ACYK0721
+  2.5   3.5   2.0   2.5  -0.5   2.0                                     ACYK0722
+ 10.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0723
+ 15.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0724
+ 20.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0725
+ 25.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0726
+ 30.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0727
+ 10.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0728
+ 11.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0729
+ 12.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0730
+ 13.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0731
+ 14.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0732
+ 15.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0733
+ 16.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0734
+ 17.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0735
+ 18.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0736
+ 19.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0737
+ 20.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0738
+ 21.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0739
+ 22.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0740
+ 23.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0741
+ 24.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0742
+ 25.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0743
+ 26.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0744
+ 27.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0745
+ 28.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0746
+ 29.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0747
+ 30.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0748
+ 40.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0749
+ 41.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0750
+ 42.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0751
+ 43.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0752
+ 44.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0753
+ 45.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0754
+ 46.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0755
+ 47.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0756
+ 48.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0757
+ 49.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0758
+ 50.0  30.0  40.0   2.0   2.0   4.0                                     ACYK0759
+ 20.0  30.0  40.0  20.0   0.0  20.0                                     ACYK0760
+ 20.0  30.0  40.0  20.0   5.0  25.0                                     ACYK0761
+ 20.0  30.0  40.0  20.0  10.0  30.0                                     ACYK0762
+ 20.0  30.0  40.0   0.0 -30.0 -30.0                                     ACYK0763
+ 20.0  30.0  40.0   5.0 -30.0 -25.0                                     ACYK0764
+ 20.0  30.0  40.0  10.0 -30.0 -20.0                                     ACYK0765
+ 30.0  20.0  20.0 -15.0  20.0   5.0                                     ACYK0766
+ 30.0  20.0  20.0 -10.0  20.0  10.0                                     ACYK0767
+ 30.0  20.0  20.0  -5.0  20.0  15.0                                     ACYK0768
+ 30.0  20.0  20.0   5.0  15.0  20.0                                     ACYK0769
+ 30.0  20.0  20.0  10.0  10.0  20.0                                     ACYK0770
+ 30.0  20.0  20.0  15.0   5.0  20.0                                     ACYK0771
+ 20.0  20.0  20.0 -20.0   5.0 -15.0                                     ACYK0772
+ 20.0  20.0  20.0 -20.0  10.0 -10.0                                     ACYK0773
+ 20.0  20.0  20.0 -20.0  15.0  -5.0                                     ACYK0774
+ 20.0  20.0  20.0 -15.0  -5.0 -20.0                                     ACYK0775
+ 20.0  20.0  20.0 -10.0 -10.0 -20.0                                     ACYK0776
+ 20.0  20.0  20.0   0.0 -20.0 -20.0                                     ACYK0777
+ 20.0  20.0  40.0 -20.0   0.0 -20.0                                     ACYK0778
+ 20.0  20.0  40.0 -20.0   5.0 -15.0                                     ACYK0779
+ 20.0  20.0  40.0 -20.0  10.0 -10.0                                     ACYK0780
+ 20.0  20.0  40.0   0.0  20.0  20.0                                     ACYK0781
+ 20.0  20.0  40.0   5.0  20.0  25.0                                     ACYK0782
+ 20.0  20.0  40.0  10.0  20.0  30.0                                     ACYK0783
+ 30.0  20.0  10.0  -5.0   5.0   0.0                                     ACYK0784
+ 30.0  20.0  10.0 -10.0  10.0   0.0                                     ACYK0785
+ 30.0  20.0  10.0 -20.0  20.0   0.0                                     ACYK0786
+ 30.0  20.0  10.0  -5.0  10.0   5.0                                     ACYK0787
+ 30.0  20.0  10.0 -10.0  15.0   5.0                                     ACYK0788
+ 30.0  20.0  10.0 -15.0  20.0   5.0                                     ACYK0789
+ 10.5  31.5  21.0   7.5  10.5  18.0                                     ACYK0790
+ 10.5  31.5  21.0   6.5   9.5  16.0                                     ACYK0791
+ 10.5  31.5  21.0   5.5   8.5  14.0                                     ACYK0792
+ 10.5  31.5  21.0   3.5   8.5  12.0                                     ACYK0793
+ 10.5  31.5  21.0   4.5   9.5  14.0                                     ACYK0794
+ 10.5  31.5  21.0   5.5  10.5  16.0                                     ACYK0795
+  4.0   4.0   1.0   0.0   0.0   0.0    1.0                              ACYK0796
+  3.5   3.5   4.0   4.0   0.0   0.5                                     ACYK0797
+  3.5   3.5   4.0   4.0   0.0   1.5                                     ACYK0798
+  3.5   3.5   4.0   4.0   0.0   2.5                                     ACYK0799
+  3.5   3.5   4.0   4.0   0.0   3.5                                     ACYK0800
+  3.5   3.5   4.0   4.0   0.0   4.5                                     ACYK0801
+  3.5   3.5   4.0   4.0   0.0   5.5                                     ACYK0802
+  3.5   3.5   4.0   4.0   0.0   6.5                                     ACYK0803
+  3.5   3.5   4.0   4.0   0.0   7.5                                     ACYK0804
+  3.5   3.5   4.0   4.0   1.0   0.5                                     ACYK0805
+  3.5   3.5   4.0   4.0   1.0   1.5                                     ACYK0806
+  3.5   3.5   4.0   4.0   1.0   2.5                                     ACYK0807
+  3.5   3.5   4.0   4.0   1.0   3.5                                     ACYK0808
+  3.5   3.5   4.0   4.0   1.0   4.5                                     ACYK0809
+  3.5   3.5   4.0   4.0   1.0   5.5                                     ACYK0810
+  3.5   3.5   4.0   4.0   1.0   6.5                                     ACYK0811
+  3.5   3.5   4.0   4.0   1.0   7.5                                     ACYK0812
+  3.5   3.5   4.0   4.0   2.0   0.5                                     ACYK0813
+  3.5   3.5   4.0   4.0   2.0   1.5                                     ACYK0814
+  3.5   3.5   4.0   4.0   2.0   2.5                                     ACYK0815
+  3.5   3.5   4.0   4.0   2.0   3.5                                     ACYK0816
+  3.5   3.5   4.0   4.0   2.0   4.5                                     ACYK0817
+  3.5   3.5   4.0   4.0   2.0   5.5                                     ACYK0818
+  3.5   3.5   4.0   4.0   2.0   6.5                                     ACYK0819
+  3.5   3.5   4.0   4.0   2.0   7.5                                     ACYK0820
+  3.5   3.5   4.0   4.0   3.0   0.5                                     ACYK0821
+  3.5   3.5   4.0   4.0   3.0   1.5                                     ACYK0822
+  3.5   3.5   4.0   4.0   3.0   2.5                                     ACYK0823
+  3.5   3.5   4.0   4.0   3.0   3.5                                     ACYK0824
+  3.5   3.5   4.0   4.0   3.0   4.5                                     ACYK0825
+  3.5   3.5   4.0   4.0   3.0   5.5                                     ACYK0826
+  3.5   3.5   4.0   4.0   3.0   6.5                                     ACYK0827
+  3.5   3.5   4.0   4.0   3.0   7.5                                     ACYK0828
+  3.5   3.5   4.0   4.0   4.0   0.5                                     ACYK0829
+  3.5   3.5   4.0   4.0   4.0   1.5                                     ACYK0830
+  3.5   3.5   4.0   4.0   4.0   2.5                                     ACYK0831
+  3.5   3.5   4.0   4.0   4.0   3.5                                     ACYK0832
+  3.5   3.5   4.0   4.0   4.0   4.5                                     ACYK0833
+  3.5   3.5   4.0   4.0   4.0   5.5                                     ACYK0834
+  3.5   3.5   4.0   4.0   4.0   6.5                                     ACYK0835
+  3.5   3.5   4.0   4.0   4.0   7.5                                     ACYK0836
+  3.5   3.5   4.0   4.0   5.0   0.5                                     ACYK0837
+  3.5   3.5   4.0   4.0   5.0   1.5                                     ACYK0838
+  3.5   3.5   4.0   4.0   5.0   2.5                                     ACYK0839
+  3.5   3.5   4.0   4.0   5.0   3.5                                     ACYK0840
+  3.5   3.5   4.0   4.0   5.0   4.5                                     ACYK0841
+  3.5   3.5   4.0   4.0   5.0   5.5                                     ACYK0842
+  3.5   3.5   4.0   4.0   5.0   6.5                                     ACYK0843
+  3.5   3.5   4.0   4.0   5.0   7.5                                     ACYK0844
+  3.5   3.5   4.0   4.0   6.0   0.5                                     ACYK0845
+  3.5   3.5   4.0   4.0   6.0   1.5                                     ACYK0846
+  3.5   3.5   4.0   4.0   6.0   2.5                                     ACYK0847
+  3.5   3.5   4.0   4.0   6.0   3.5                                     ACYK0848
+  3.5   3.5   4.0   4.0   6.0   4.5                                     ACYK0849
+  3.5   3.5   4.0   4.0   6.0   5.5                                     ACYK0850
+  3.5   3.5   4.0   4.0   6.0   6.5                                     ACYK0851
+  3.5   3.5   4.0   4.0   6.0   7.5                                     ACYK0852
+  3.5   3.5   4.0   4.0   7.0   0.5                                     ACYK0853
+  3.5   3.5   4.0   4.0   7.0   1.5                                     ACYK0854
+  3.5   3.5   4.0   4.0   7.0   2.5                                     ACYK0855
+  3.5   3.5   4.0   4.0   7.0   3.5                                     ACYK0856
+  3.5   3.5   4.0   4.0   7.0   4.5                                     ACYK0857
+  3.5   3.5   4.0   4.0   7.0   5.5                                     ACYK0858
+  3.5   3.5   4.0   4.0   7.0   6.5                                     ACYK0859
+  3.5   3.5   4.0   4.0   7.0   7.5                                     ACYK0860
+ 35.0  35.0  40.0  40.0  26.0  15.0                                     ACYK0861
+ 35.0  35.0  40.0  40.0  26.0  17.0                                     ACYK0862
+ 35.0  35.0  40.0  40.0  26.0  19.0                                     ACYK0863
+ 35.0  35.0  40.0  40.0  26.0  21.0                                     ACYK0864
+ 35.0  35.0  40.0  40.0  26.0  23.0                                     ACYK0865
+ 35.0  35.0  40.0  40.0  26.0  25.0                                     ACYK0866
+ 35.0  35.0  40.0  40.0  26.0  27.0                                     ACYK0867
+ 35.0  35.0  40.0  40.0  26.0  29.0                                     ACYK0868
+ 35.0  35.0  40.0  40.0  26.0  31.0                                     ACYK0869
+ 35.0  35.0  40.0  40.0  26.0  33.0                                     ACYK0870
+ 35.0  35.0  40.0  40.0  26.0  35.0                                     ACYK0871
+ 35.0  35.0  40.0  40.0  26.0  36.0                                     ACYK0872
+ 35.0  35.0  40.0  40.0  26.0  37.0                                     ACYK0873
+ 35.0  35.0  40.0  40.0  26.0  38.0                                     ACYK0874
+ 35.0  35.0  40.0  40.0  26.0  39.0                                     ACYK0875
+ 35.0  35.0  40.0  40.0  26.0  40.0                                     ACYK0876
+ 35.0  35.0  40.0  40.0  26.0  41.0                                     ACYK0877
+ 35.0  35.0  40.0  40.0  26.0  42.0                                     ACYK0878
+ 35.0  35.0  40.0  40.0  26.0  43.0                                     ACYK0879
+ 35.0  35.0  40.0  40.0  26.0  44.0                                     ACYK0880
+ 35.0  35.0  40.0  40.0  26.0  45.0                                     ACYK0881
+ 25.0  25.0  30.0  30.0  50.0  10.0                                     ACYK0882
+ 25.0  25.0  30.0  30.0  50.0  15.0                                     ACYK0883
+ 25.0  25.0  30.0  30.0  50.0  20.0                                     ACYK0884
+ 25.0  25.0  30.0  30.0  50.0  25.0                                     ACYK0885
+ 25.0  25.0  30.0  30.0  10.0   5.0                                     ACYK0886
+ 25.0  25.0  30.0  30.0  15.0   5.0                                     ACYK0887
+ 25.0  25.0  30.0  30.0  20.0   5.0                                     ACYK0888
+ 25.0  25.0  30.0  30.0  25.0   5.0                                     ACYK0889
+ 30.0  30.0  25.0  25.0  50.0  30.0                                     ACYK0890
+ 30.0  30.0  25.0  25.0  50.0  35.0                                     ACYK0891
+ 30.0  30.0  25.0  25.0  50.0  40.0                                     ACYK0892
+ 30.0  30.0  25.0  25.0  50.0  45.0                                     ACYK0893
+ 30.0  30.0  25.0  25.0  30.0   5.0                                     ACYK0894
+ 30.0  30.0  25.0  25.0  35.0   5.0                                     ACYK0895
+ 30.0  30.0  25.0  25.0  40.0   5.0                                     ACYK0896
+ 30.0  30.0  25.0  25.0  45.0   5.0                                     ACYK0897
+ 25.0  20.0  25.0  20.0  10.0  40.0                                     ACYK0898
+ 25.0  20.0  25.0  20.0  15.0  40.0                                     ACYK0899
+ 25.0  20.0  25.0  20.0  20.0  40.0                                     ACYK0900
+ 25.0  20.0  25.0  20.0  25.0  40.0                                     ACYK0901
+ 25.0  20.0  25.0  20.0   5.0  10.0                                     ACYK0902
+ 25.0  20.0  25.0  20.0   5.0  15.0                                     ACYK0903
+ 25.0  20.0  25.0  20.0   5.0  20.0                                     ACYK0904
+ 25.0  20.0  25.0  20.0   5.0  25.0                                     ACYK0905
+ 20.0  25.0  20.0  25.0  30.0  40.0                                     ACYK0906
+ 20.0  25.0  20.0  25.0  35.0  40.0                                     ACYK0907
+ 20.0  25.0  20.0  25.0  40.0  40.0                                     ACYK0908
+ 20.0  25.0  20.0  25.0  45.0  40.0                                     ACYK0909
+ 20.0  25.0  20.0  25.0   5.0  30.0                                     ACYK0910
+ 20.0  25.0  20.0  25.0   5.0  35.0                                     ACYK0911
+ 20.0  25.0  20.0  25.0   5.0  40.0                                     ACYK0912
+ 35.0  35.0  40.0  40.0  26.0  45.0    1.0                              ACYK0913
+  4.0   4.0   1.0   0.0   0.0   0.0    2.0                              ACYK0914
+                                                                        ACYK****

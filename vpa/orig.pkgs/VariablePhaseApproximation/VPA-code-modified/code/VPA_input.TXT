@@ -1,0 +1,8 @@
+LSCAN
+0,200              !LMIN,LMAX
+100000.0           !  E in cm^-1
+
+
+ESCAN
+0                  !L
+1.5d0,60.0d0       !Emin,Emax

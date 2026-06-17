@@ -1,0 +1,5 @@
+  Control word is DCS  
+ Compute the angle differential cross sections.
+ Lmin=            0  Lmax=            6
+ Emin=    2.0000000000000000       Emax=    6.0000000000000000       Nestep=           40
+ angmin=   0.0000000000000000      angmax=   180.00000000000000      nangstep=          90

@@ -1,0 +1,8 @@
+#! /bin/tcsh
+cat potential.txt | awk '{print $1, " ", $2*1000+27211.648*0*(0+1)/(2*1815.5225*$1**2)}' > l=0.pot.txt
+cat potential.txt | awk '{print $1, " ", $2*1000+27211.648*1*(1+1)/(2*1815.5225*$1**2)}' > l=1.pot.txt
+cat potential.txt | awk '{print $1, " ", $2*1000+27211.648*2*(2+1)/(2*1815.5225*$1**2)}' > l=2.pot.txt
+cat potential.txt | awk '{print $1, " ", $2*1000+27211.648*3*(3+1)/(2*1815.5225*$1**2)}' > l=3.pot.txt
+cat potential.txt | awk '{print $1, " ", $2*1000+27211.648*4*(4+1)/(2*1815.5225*$1**2)}' > l=4.pot.txt
+cat potential.txt | awk '{print $1, " ", $2*1000+27211.648*5*(5+1)/(2*1815.5225*$1**2)}' > l=5.pot.txt
+cat potential.txt | awk '{print $1, " ", $2*1000+27211.648*6*(6+1)/(2*1815.5225*$1**2)}' > l=6.pot.txt

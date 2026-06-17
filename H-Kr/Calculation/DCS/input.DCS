@@ -1,0 +1,4 @@
+DCS  
+0, 6                 !LMIN,LMAX
+2.0d0, 6.0d0,  80    !Emin,Emax
+0.0d0, 180.0d0, 180  !angmin,angmax,nangstop

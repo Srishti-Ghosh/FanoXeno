@@ -1,0 +1,578 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2024.02.20.14.41.26;	author koikef;	state Exp;
+branches;
+next	;
+
+
+desc
+@20240220
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@      PROGRAM difelsccs
+!
+!-----------------------------------------------------------------------
+! Program for calculating the differential elastic scattering 
+! cross sections: difelsccs.
+! Scattering phaseshifts are calculated using a variable phase 
+! approximation code pacage developped by Parov and Balint-Kurti:
+!                                               F.K 16 February 2024
+!-----------------------------------------------------------------------
+! Demonstration program for the VPA package.
+! This is the version of 7 May 2020.
+! Written by A.P. Palov and G.G. Balint-Kurti
+! ref: A.P. Palov and G.G. Balint-Kurti, Computer Physics Communications (2020)
+!-----------------------------------------------------------------------------
+! The part for the angular differential cross sections are written by F. K.
+! This is the version of 16 February 2024.
+!
+! In this version, the parameters for the physical qantities are 
+! tuned for the cold collisions of hydrogen atoms on kripton atoms.
+! For the calculation of other scattering systems, the parameters 
+! should be modified as needed.
+!
+! The calculation of the angular differential cross sections is activated
+! by giving "DCS" for the control word.
+! The input data from the standard input will be prepared 
+! as in the following form:
+!
+!     DCS  
+!     0, 6,              !LMIN, LMAX             
+!     2.5d0, 6.0d0, 60   !Emin, Emax, nestep
+!     0.0d0, 180.0d0, 180 !angmin, angmax, nangstep
+!
+!  LMIN: The lowest angular momentum quantum number of the scattering system
+!        for which the calculation to be performed.
+!  LMAX: The highest angular momentum quantum number of the scattering system
+!        for which the calculation to be performed.
+!  Emin: The lowest collision energy in units of 1/cm.
+!  Emax: The highest collision energy in units of 1/cm. 
+!  nestep: The number of energy points for which the calculation to be performed.
+!  angmin: The smallest scattering angle in units of degree.
+!  angmax: The hirgest scattering angle in units of degree.
+!  nangstep: The number of angle points for which the calculation to be performed.
+!---------------------------------------------------------------------------
+      IMPLICIT None
+      CHARACTER*5 :: CONTR
+
+      REAL*8 POTENT1, Ecr, Ecr1
+      external f1, jac1
+
+      INTEGER   i,iopt,istate,itask,itol,jt,liw,lrw,nerr
+      integer   j
+      INTEGER   LMIN,Lmax
+      INTEGER   L,LMAX0
+      INTEGER, DIMENSION(1)  :: NEQ
+      INTEGER, DIMENSION(21) :: iwork
+      data      neq/1/, jt/1/, nerr/0/, lrw/36/, liw/21/, iopt/0/
+
+      REAL*8, DIMENSION(1) ::   y,RTOL,ATOL
+      REAL*8, DIMENSION(36) ::  rwork
+      real*8, dimension(100) :: ym
+      real*8, dimension(361) :: scatang, angdcs,asydcs,angbgd
+
+      REAL*8, DIMENSION(10000) ::     E
+      REAL*8, DIMENSION(10000) ::   RW1
+      real*8 angmin, angmax, eps, width
+      integer nestep, nangstep
+      real*8 ak2
+      real*8 Er,bgps
+      integer lr
+      complex *16, dimension(361) :: angwpm, angflr
+
+
+      REAL*8 RMU,R1(2000),V1(2000), V
+      REAL*8 Y0,EMAX,WVMAX,RMAX,XMAX,EMIN,YEND,XEK,FACTOR,CROSS
+      REAL*8 YOLD,RW,T,TOUT,PCROSS
+!      REAL*8 amass_Ne,autAng,Pi,autAng2,CM1teV,auteV
+! Replaced by the H + Kr collision system.
+      REAL*8 amass_H,amass_Kr,autAng,Pi,autAng2,CM1teV,auteV
+
+      integer  KP
+
+      ! WKB
+      real*8    Pwkb
+
+     nestep = 600
+     angmin = 0
+     angmax = 180
+     nangstep = 180
+     
+!      data      amass_Ne/36443.98898270d0/,autAng/0.529177249d0/
+! Replaced by the H + Kr collision system
+      data   autAng/0.529177249d0/
+      DATA amass_H /1837.36d0/   ! atomic H  mass in electron masses
+      DATA amass_Kr/152754.d0/   ! atomic Kr mass in electron masses
+      data      Pi/3.1415926535897932384626433832795d0/
+      data      CM1teV/1.2398134d-4/
+      data      auteV/27.211648d0/
+      data      KP/1/    ! selects type of potential , 1 if attractive, any other integer if repulsive
+
+      autAng2=autAng*autAng      ! conversion to Angstrom sq
+!      RMU=amass_Ne/2.d0          ! reduced Ne-Ne mass
+! Rplaced by the reduced mass of H + K.
+      RMU=amass_H*amass_Kr/(amass_H + amass_Kr)
+
+!     open files
+!     Data input.
+!      Open(Unit=5,FILE ='./VPA_input.TXT',STATUS='UNKNOWN')
+!      Use standard input instead.
+!     Output the interaction potential.
+       Open(Unit=8,FILE ='./potential.txt',STATUS='UNKNOWN')
+!     Output the calculation procedure.       
+!      Open(Unit=6,FILE ='./output.txt',STATUS='UNKNOWN')
+!      Use standard output instead.
+!     Output the angle differential cross sections or others.
+       Open(Unit=7,FILE ='./angdcs.txt',STATUS='UNKNOWN')
+!     Output the scattering phaseshifts.
+       open(unit=10,file ='./phshift.txt',status='unknown') 
+!     Output the angle dependent w-parameter.
+       open(unit=12,file ='./wparameter.txt',status='unknown')
+!     Output the synthesized angle differential cross sections.
+       open(unit=13,file ='./asydcs.txt',status='unknown')
+
+!     For program debugging.       
+!      Open(Unit=9,FILE ='./debug.TXT',STATUS='UNKNOWN')
+!      Currently of no use.
+!
+!     Set some parameters
+      Rmax=100.d0
+
+!     Read in control word to determine type of scan requiored.
+      read(5,*)CONTR
+      write(6,*)' Control word is ',CONTR
+      Call flush(6)
+!
+! Case CONTR = ESCAN
+!    Scattering phase shifts are calculated for a specified orbital
+!    angular momentum L, scanning the collision energies for the 
+!    range of specified [Emin, Emax].
+! Case CONTR = LSCAN
+!    Scattering phase shifts are calculated for a specified collision energy,
+!    scanning the angular momentum L for the range of specified [Lmin, Lmax].
+! Case CONTR = DCS
+!    Angle differential scattering cross sections are calculated for 
+!    the specified range of L and E and the scattering angle.
+!
+!      STOP
+
+!     set tolerances
+      itol = 1
+      rtol(1)=0.d0
+!     print out potential -- this step can be skipped
+!     Subroutine POTENT1(R) returns the potential in atomic units (a.u.)
+!     The internuclear separation, R, is in atomic units or Bohr.
+
+!     write(7,*)'BEFORE POT loop LMAX= ',LMAX
+      do i=1,2000
+       R1(i)=0.1d0+0.01d0*dfloat(i-1)   ! in Bohr
+       V1(i)=POTENT1(R1(i),KP)/2.d0/RMU        ! in Hartree
+       V=V1(i)*autev     ! in eV
+       write(8,99)R1(i), V
+      enddo
+      close(8)
+ 99   format(2f16.7)
+!
+!      write(7,*)'After POT loop LMAX= ',LMAX
+
+!      write(6,*)'Demonstration program for Variable Phase Approach (VPA) package'
+!      write(6,*)'For the calculation of the phase shift, Y, in an atom-atom scattering problem.'
+!      write(6,*)'References:'
+!      write(6,*)'F. Calogero, Variable phase approach to potential scattering '
+!      write(6,*)'                            (Academic Press, New York, 1967).'
+!      write(6,*)'A. Ronveaux, Phase Equation in Quantum Mechanics '
+!      write(6,*)'               (American J. Phys. 37, 135 (1969).'
+!      write(6,*)'G. G. Balint-Kurti and A. P. Palov, Theory of Molecular Collision, '
+!      write(6,*)'Royal Society of Chemistry. Theoretical and Computational Chemistry Series,2015.'
+
+
+!      write(6,*)' The mathematical Problem is to solve the Variable Phase Equations for the phase shift, Y:'
+!      write(6,*)' dY/dR + V(R)/k*(RJ(kR)*cos(Y)-RY(kR)*sin(Y))**2 = 0, '
+!      write(6,*)' Y(0) = 0'
+
+
+!      write(9,*)' Number of first order differential equations to be solved by subroutine DLSODA; neq = ',neq
+
+      Y0=1.d-10                     ! initial phase shift
+      Yend=1.d-04                   ! final phase shift
+
+      IF(CONTR.eq.'ESCAN')THEN
+
+!     This section performs an Energy scan at fixed value of L
+
+!      write(9,*)'Cycle over 600 values of relative kinetic energy '
+!      write(9,*)'Minimum Kinetic Energy/cm^-1 =  ',Emin
+!      write(9,*)'Maximum Kinetic Energy/cm^-1 =  ',Emin
+
+!       write(9,*)'Kinetic Energy/cm^-1, L, Phase shift/pi, Partial Cross section'
+!       write(7,*)'Kinetic Energy/cm^-1, L, Phase shift/pi, Partial Cross section'
+
+       write(6,*)' Performing a scan over energies at fixed value of orbital angular '
+       write(6,*)' momentum quantum number L'
+
+       read(5,*) L
+       write(6,*)'L ',L
+
+       Lmax0=L
+
+!     read in Emin and Emax in cm-1.
+       read(5,*)Emin,Emax
+       write(6,*)'Emin= ',Emin,' Emax= ',Emax
+
+       Emin=Emin*CM1teV             ! in eV
+       Emax=Emax*CM1teV             ! in eV
+
+       WVmax=dsqrt(2.d0*RMU*Emax/auteV)   ! maximal wave vector in a.u.
+       Xmax=WVmax*Rmax
+
+!       Subroutine InitPoint determines the starting value of Xek*R (nondimensional),
+!       for all possible values of the orbital angular momentum L.
+!       It may also change LMAX0.
+
+       call InitPoint(Y0,Lmax0,Xmax,RW1)
+
+
+       IF(Lmax0.lt.L) then
+        write(6,*)'input L value is too large'
+        STOP
+       END IF
+
+!     RW1(L) is the starting Xek*R value for orbital angular momentum L.
+
+       Ecr1= Ecr(RMU,Rmax,KP)           ! Ecritical in a.u.
+
+       CALL EGRID(Emin,Emax,E)       ! E in a.u.
+
+!     Do loop over Energy
+       ENERGY: Do I=1,600,5
+        Xek=dsqrt(2.d0*RMU*E(I))    ! wave vector in a.u.
+        Factor=4.d0*Pi*autAng2/Xek/Xek
+
+        if(E(i).lt.10.d0*Ecr1)then
+          atol(1)=1.0d-14        ! possible shape resonance
+        else
+          atol(1) = 1.0d-11      ! area of no resonances or repulsive potential
+        endif
+!       write (*,111) itol,rtol,atol
+!       write(9,*)' itol =',itol, ' rtol =',rtol(1),' atol =',atol(1)
+        cross=0.d0
+        Yold=-1.d0
+        if(L.eq.0)then
+          RW=Y0
+        else
+          RW=RW1(L)
+        end if
+        t=RW/Xek    ! starting R value
+        y(1)=-Y0    ! starting phase shift value
+
+        itask = 1
+        istate = 1
+        tout = Rmax
+        call dlsoda(f1,KP,L,Xek,neq,y,t,tout,itol,rtol,atol,  &
+     &      itask,istate,iopt,rwork,lrw,iwork,liw,jac1,jt)
+
+        pcross=Factor*dfloat(2*L+1)*dsin(Y(1))**2
+        cross=cross+pcross
+
+        Write(7,778) E(I)*autev/CM1teV, L , Y(1)/Pi, pcross   ! in 1/cm
+ !       write(9,777) E(I)*autev, L, Y(1)/Pi, pcross             ! in eV
+        Yold=Y(1)
+       enddo ENERGY                      ! end do over energies
+
+!Now read in control word for scan over L at fixed energy.
+
+      ELSE IF(CONTR.eq.'LSCAN')THEN
+        write(6,*)'Performing scan over quantum orbital angular momentum numbers L'
+        read(5,*) Lmin,Lmax
+        write(6,*)'Lmin= ',Lmin,' Lmax= ',Lmax
+
+        read(5,*)E(1)   ! read in Energy in cm-1
+        write(6,*)'Kinetic Energy/cm-1  =',E(1)
+        E(1)=E(1)*CM1teV             ! convert to eV
+        E(1)=E(1)/autev              ! convert to au
+        Emax=E(1)
+
+        Xek=dsqrt(2.d0*RMU*E(1))
+        Factor=4.d0*Pi*autAng2/Xek/Xek
+
+        WVmax=dsqrt(2.d0*RMU*Emax)   ! maximal wave vector
+        Xmax=WVmax*Rmax
+
+!       Subroutine InitPoint determines the starting value of Xek*R (nondimensional),
+!       for all possible values of the orbital angular momentum L.
+!       It may also change LMAX0.
+
+        Lmax0=Lmax
+
+        call InitPoint(Y0,Lmax0,Xmax,RW1)
+
+        IF(Lmax.lt.Lmax0) then
+           write(6,*)'input LMAX value is too large'
+           STOP
+        END IF
+
+
+!     RW1(L) is the starting Xek*R value for quantum orbital angular number L.
+
+        Ecr1= Ecr(RMU,Rmax,KP)           ! Ecritical in a.u.
+
+        if(E(1).lt.10.d0*Ecr1)then
+          atol(1)=1.0d-14        ! possible shape resonance
+        else
+          atol(1) = 1.0d-11      ! area of no resonances or repulsive potential
+        endif
+!       write (6,111) itol,rtol,atol
+!        write(9,*)' itol =',itol, ' rtol =',rtol(1),' atol =',atol(1)
+!111    format(/' itol =',i3,//' rtol =',d10.1,//' atol =',d10.1//)
+
+        cross=0.d0
+        Yold=-1.d0
+
+!     Cycle over orbital angular momentum L
+
+        ORBITAL: DO L=LMIN,LMAX
+          IF(L.GT.LMAX)EXIT
+
+          if(L.eq.0)then
+            RW=Y0
+          else
+            RW=RW1(L)
+          end if
+          t=RW/Xek
+          y(1)=-Y0
+          Pwkb=0.d0
+          if(E(1).gt.10.d0*Ecr1)then
+            ! WKB calculations
+             call WKB(KP,Rmu,Xek,L,0.1d0,20.d0,Pwkb)
+          endif
+          itask = 1
+          istate = 1
+          tout = Rmax
+          call dlsoda(f1,KP,L,Xek,neq,y,t,tout,itol,rtol,atol,  &
+     &      itask,istate,iopt,rwork,lrw,iwork,liw,jac1,jt)
+
+          if(Ecr1.gt.0.d0) then  ! potential with a well
+            if(dabs(Y(1)).le.Yend.AND.Y(1).GT.0.D0)go to 22
+            if(dsign(1.d0,Y(1)).le.0.d0.AND.Yold.gt.0.d0)go to 22
+          else                   ! pure repulsive potential
+            if(dabs(Y(1)).le.Yend)go to 22
+          endif
+
+          pcross=Factor*dfloat(2*L+1)*dsin(Y(1))**2
+          cross=cross+pcross
+
+          Write(7,778) E(1)*autev/CM1teV, L, Y(1)/Pi, pcross, Pwkb/Pi     ! in 1/cm
+!          write(9,777) E(1)*autev, L, Y(1)/Pi, pcross,Pwkb/Pi               ! in eV
+          Yold=Y(1)
+        enddo ORBITAL       ! end do over orbital quantum numbers L
+ 22     continue
+
+      ELSE IF(CONTR.eq.'DCS')THEN
+        write(6,*)'Compute the angle differential cross sections.'              
+
+!     Read in the range of angular momentum quantum numbers.        
+        read(5,*) Lmin,Lmax
+        write(6,*)'Lmin= ',Lmin,' Lmax= ',Lmax
+!
+!     Read in the range of collision energies in units of 1/cm.
+       read(5,*)Emin,Emax, nestep
+       write(6,*)'Emin= ',Emin,' Emax= ',Emax, ' Nestep= ',nestep
+
+       Emin=Emin*CM1teV             ! in eV
+       Emax=Emax*CM1teV             ! in eV
+
+       WVmax=dsqrt(2.d0*RMU*Emax/auteV)   ! maximal wave vector in a.u.
+       Xmax=WVmax*Rmax
+
+!     Readin the range of scattering angles in units of degree.       
+!      read (5,*) angmin, angmax, nangstep
+       write (6,*)'angmin=',angmin,'angmax=',angmax,'nangstep=',nangstep
+        
+!       Subroutine InitPoint determines the starting value of Xek*R (nondimensional),
+!       for all possible values of the orbital angular momentum L.
+!       It may also change LMAX0.
+
+        Lmax0=Lmax
+
+        call InitPoint(Y0,Lmax0,Xmax,RW1)
+
+        IF(Lmax.lt.Lmax0) then
+           write(6,*)'input LMAX value is too large'
+           STOP
+        END IF
+
+!     RW1(L) is the starting Xek*R value for quantum orbital angular number L.
+
+        Ecr1= Ecr(RMU,Rmax,KP)           ! Ecritical in a.u.
+        CALL EGRID2(Emin,Emax,nestep,E)          ! E in a.u.
+
+!     Do loop over Energy
+       ENERGYLOOP: Do I=1,nestep+1
+        Xek=dsqrt(2.d0*RMU*E(I))    ! wave vector in a.u.
+        Factor=4.d0*Pi*autAng2/Xek/Xek
+     
+        if(E(i).lt.10.d0*Ecr1)then
+          atol(1)=1.0d-14        ! possible shape resonance
+        else
+          atol(1) = 1.0d-11      ! area of no resonances or repulsive potential
+        endif
+!       write (6,222) itol,rtol,atol
+!        write(9,*)' itol =',itol, ' rtol =',rtol(1),' atol =',atol(1)
+!222    format(/' itol =',i3,//' rtol =',d10.1,//' atol =',d10.1//)
+
+        cross=0.d0
+        Yold=-1.d0
+
+!     Cycle over orbital angular momentum L
+
+        ORBITALLOOP: DO L=LMIN,LMAX
+          IF(L.GT.LMAX)EXIT
+
+          if(L.eq.0)then
+            RW=Y0
+          else
+            RW=RW1(L)
+          end if
+          t=RW/Xek
+          y(1)=-Y0
+          Pwkb=0.d0
+          if(E(i).gt.10.d0*Ecr1)then
+            ! WKB calculations
+             call WKB(KP,Rmu,Xek,L,0.1d0,20.d0,Pwkb)
+          endif
+          itask = 1
+          istate = 1
+          tout = Rmax
+          call dlsoda(f1,KP,L,Xek,neq,y,t,tout,itol,rtol,atol,  &
+     &      itask,istate,iopt,rwork,lrw,iwork,liw,jac1,jt)
+
+!         if(Ecr1.gt.0.d0) then  ! potential with a well
+!           if(dabs(Y(1)).le.Yend.AND.Y(1).GT.0.D0)go to 33
+!           if(dsign(1.d0,Y(1)).le.0.d0.AND.Yold.gt.0.d0)go to 33
+!         else                   ! pure repulsive potential
+!           if(dabs(Y(1)).le.Yend)go to 33
+!         endif
+
+          pcross=Factor*dfloat(2*L+1)*dsin(Y(1))**2
+          cross=cross+pcross
+
+          Yold=Y(1)
+          ym(L+1)=Y(1)
+!         write (6,*) "Note", L, ym(L)
+        enddo ORBITALLOOP       ! end do over orbital quantum numbers L
+ 33     continue
+!
+! Calculate and output angle differential cross sections.
+! 
+        ak2 = 2*RMU*E(i)
+        call angledcs(ak2,Lmin,Lmax,ym,scatang,angdcs,angmin,angmax,nangstep)
+        do 40 j = 1, nangstep+1
+          write(7,801) E(i)*autev/CM1teV,scatang(j)*180/pi,angdcs(j)*sin(scatang(j))
+   40   continue     
+        write(7,802) 
+!
+! Output scattering phaseshift.
+       do 50 l = lmin, lmax
+         write(10,*) E(i)*autev/CM1teV, l, ym(l+1)
+  50   continue
+       write(10,902)
+!  
+       enddo ENERGYLOOP
+        
+       ELSE IF(CONTR.eq.'WPRM')THEN
+         write(6,*)'Compute the angle dependent w-parameter.'                    
+       
+!     Read in the range of angular momentum quantum numbers.        
+        read(5,*) Lmin,Lmax,lr
+        write(6,*)'Lmin= ',Lmin,' Lmax= ',Lmax,' Lr= ',lr
+!
+!     Read in the range of collision energies in units of 1/cm.
+       read(5,*)Emin,Emax, nestep
+       write(6,*)'Emin= ',Emin,' Emax= ',Emax, ' Nestep= ',nestep
+
+       Emin=Emin*CM1teV             ! in eV
+       Emax=Emax*CM1teV             ! in eV
+
+!     Read in the resonance energy and width in units of 1/cm.
+       read(5,*) Er, width
+       write(6,*)'Er= ',Er,' width= ',width
+       
+       Er = Er*CM1teV 
+       width = width*CM1teV
+
+!     Readin the range of scattering angles in units of degree.       
+       read (5,*) angmin, angmax, nangstep
+       write (6,*)'angmin=',angmin,'angmax=',angmax,'nangstep=',nangstep
+!
+!     Readin the list of background phase shifts.
+       do 60 i = 1,100
+        read(5,*,end=65) L,bgps
+          ym(L+1) = bgps 
+          write(6,*) l, bgps, ym(l+1)
+  60   continue
+  65 continue
+!  
+! Calculate and output angle dependent w-parameter.      
+! 
+        call wparam(Lmin,Lmax,lr,ym,scatang,angwpm,angbgd,angmin,angmax,nangstep)
+        do 70 j = 1, nangstep+1
+!         write(12,811) angwpm(j)*sin(scatang(j)),scatang(j)*180/pi
+          write(12,811) angwpm(j),scatang(j)*180/pi
+   70   continue     
+        write(12,812) 
+!
+! Calculate synthesized angle dependent differential cross sections.
+!
+       CALL EGRID2(Emin,Emax,nestep,E)          ! E in a.u.
+!       
+!     Do loop over Energy
+       ENERGYLOOP2: Do I=1,nestep+1
+!
+! Calculate and output synthesized angle differential cross sections.
+!
+        ak2 = 2*RMU*E(i)
+        eps = (E(i)*autev-Er)/(width/2)
+        do 80 j = 1, nangstep+1
+! Both the following formulae are confirmed to be the same within the accuracy of 1x10^(-15)%.       
+          asydcs(j)= (1.0d0/2.0d0)*(real((-1/ak2)*angwpm(j)*exp(2*(0.0d0,1.0d0)*atan2(1.0d0,-eps)))+angbgd(j))
+!         asydcs(j)= (1.0d0/2.0d0)*(real((-1/ak2)*angwpm(j)*(eps-(0.0d0,1.0d0))/(eps+(0.0d0,1.0d0)))+angbgd(j)) 
+          write(13,801) E(i)*autev/CM1teV,scatang(j)*180/pi,asydcs(j)*sin(scatang(j))
+   80   continue
+        write(13,802)
+!
+       enddo ENERGYLOOP2
+         
+      ELSE IF((CONTR.NE.'LSCAN').AND.(CONTR.NE.'ESCAN').AND.(CONTR.NE.'DCS').AND.(CONTR.NE.'WPRM'))THEN
+               write(6,*)' No valid control word input'
+               STOP
+      ENDIF
+
+      Close(7)
+!      Close(9)
+
+ 777  format("E(eV)=",  f11.5,2x,"L=",i5," VPA= ",e13.7," PCS= ",e12.4," WKB= ",e13.7)
+ 778  format("E(1/cm)=",f11.5,2x,"L=",i5," VPA= ",e13.7," PCS= ",e12.4," WKB= ",e13.7)
+ 801  format(1pe15.7,1pe15.7,1pe15.7)
+ 802  format(' ')
+ 811  format(1pe15.7,1pe15.7,1pe15.7)
+ 812  format(' ')
+
+ 901  format(1pe15.7,i6,1pe15.7)
+ 902  format(' ')
+      stop
+      end program
+
+
+@

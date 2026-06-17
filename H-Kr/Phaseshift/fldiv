@@ -1,0 +1,9 @@
+#! /bin/tcsh
+cat phshift.txt | grep '   0 ' | awk '{print $1, " ", $3}' > l=0.ps.txt
+cat phshift.txt | grep '   1 ' | awk '{print $1, " ", $3}' > l=1.ps.txt
+cat phshift.txt | grep '   2 ' | awk '{print $1, " ", $3}' > l=2.ps.txt
+cat phshift.txt | grep '   3 ' | awk '{print $1, " ", $3}' > l=3.ps.txt
+#cat phshift.txt | grep '   4 ' | awk '{print $1, " ", $3}' > l=4.ps.txt
+cat phshift.txt | grep '   5 ' | awk '{print $1, " ", $3}' > l=5.ps.txt
+cat phshift.txt | grep '   6 ' | awk '{print $1, " ", $3}' > l=6.ps.txt
+exit

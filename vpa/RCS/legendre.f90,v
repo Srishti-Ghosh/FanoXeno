@@ -1,0 +1,45 @@
+head	1.1;
+access;
+symbols;
+locks
+	koikef:1.1; strict;
+comment	@# @;
+
+
+1.1
+date	2024.02.21.15.47.34;	author koikef;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@function Pnx(n,x)
+! Calculate Legendre polynomials
+! using Bonnet's recursion formula.
+implicit none
+double precision Pnx,x,tpnx,tpnx0,tpnx1
+integer*4 n,id
+if (n == 0) then
+Pnx = 1
+elseif (n == 1) then
+Pnx = x
+else
+tpnx0 = 1
+tpnx1 = x
+do id=2,n
+tpnx = ((2.d0*dble(id)-1.d0)*x*tpnx1 - dble(id-1)*tpnx0)/dble(id)
+tpnx0 = tpnx1
+tpnx1 = tpnx
+enddo
+Pnx = tpnx
+endif
+end function
+@

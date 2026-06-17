@@ -1,0 +1,44 @@
+
+H+Xe SCATTERING CALCULATION SUMMARY
+====================================
+
+Potential Model: Toennies et al. (1979) - Hybrid (L-J + 3-term dispersion)
+
+POTENTIAL PARAMETERS (H+Xe):
+  Well Depth (ε):         7.08 meV = 0.000260 Hartree
+  Equilibrium Distance:   7.219 a₀ = 3.82 Å
+  Switching Radius (rs):  8.957 a₀ = 4.74 Å
+  
+DISPERSION COEFFICIENTS:
+  C₆:  1.151 × 10⁶ meV·a₀⁶  =  42.30 Hartree·a₀⁶
+  C₈:  2.499 × 10⁷ meV·a₀⁸  = 918.37 Hartree·a₀⁸
+  C₁₀: 7.498 × 10⁸ meV·a₀¹⁰ = 27554.64 Hartree·a₀¹⁰
+
+MASSES:
+  m_H:  1.007825 amu = 1837.15 electron masses
+  m_Xe: 131.293 amu = 239332.50 electron masses
+  μ_red: 1.00015 amu = 1823.16 electron masses
+
+CALCULATION PARAMETERS:
+  Angular momentum range: l = 0 to 10
+  Energy range: 1.0 to 50.0 cm⁻¹
+  Energy points: 200
+  Angular range: 0° to 180°
+  Angle points: 180
+
+EXPECTED RESONANCE POSITIONS (from Table I, Toennies et al., 1979):
+  l=5:  0.68 ± 0.04 meV  ≈ 5.48 cm⁻¹
+  l=6:  1.80 ± 0.12 meV  ≈ 14.52 cm⁻¹
+  l=7:  3.21 ± 0.20 meV  ≈ 25.89 cm⁻¹
+  l=8:  4.94 ± 0.25 meV  ≈ 39.84 cm⁻¹
+
+OUTPUT FILES GENERATED:
+  ✓ potential.txt:  Potential energy grid
+  ✓ phshift.txt:    Phase shifts vs energy and l
+  ✓ angdcs.txt:     Angular DCS vs energy and angle
+
+PLOTS GENERATED:
+  ✓ potential.png:   Interaction potential curve
+  ✓ phshift.png:     Phase shifts for all l values
+  ✓ dcs_vs_angle.png: DCS at selected energies
+  ✓ dcs_heatmap.png: 2D contour plot of DCS(E, θ)

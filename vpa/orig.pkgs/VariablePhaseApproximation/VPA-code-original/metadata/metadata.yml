@@ -1,0 +1,19 @@
+metadata_version: 1
+name: 'VPA: Variable Phase Approach'
+description: The Variable Phase Approach (VPA) for the calculation of two-body scattering phase shifts is the only available exact method for the direct calculation of the scattering phase shift. Other methods, all based on solving the Schrödinger equation, yield the phase shift only modulo π. The absolute value of the phase shift and its variation with scattering energy is, however, needed for a full understanding of the scattering process, such as for instance in the study of shape resonances and Glory oscillations. The VPA has been sparingly used owing to the instability of the underlying equations and the consequent difficulty of writing computer code to solve them. We present a computer code for the efficient implementation of the VPA method for atom-atom scattering problems over a wide range of scattering energies. The code works for potentials which are singular and for those that are non-singular at the origin. An example of the implementation of the code is given for both an interaction potential with an attractive well and for a purely repulsive potential.
+tags:
+- Phase Shift
+- Atomic Collisions
+- Shape Resonance
+- Potential Resonance
+- Scattering Cross Section
+authors:
+- name: A. P. Palov
+  affiliations:
+  - name: Skobeltsyn Institute of Nuclear Physics, Moscow State University, Leninskie Gory, Moscow 119991, Russian Federation
+- name: G. G. Balint-Kurti
+  affiliations:
+  - name: Centre for Computational Chemistry, School of Chemistry, University of Bristol, Bristol BS8 1TS, United Kingdom
+corresponding_contributor:
+  name: A. P. Palov
+  email: a_palov@mail.ru

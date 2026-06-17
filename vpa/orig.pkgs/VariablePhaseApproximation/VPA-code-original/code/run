@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -ex
+
+gfortran -g -o VPA *.f90 *.f
+
+./VPA <./VPA_input.TXT > /results/output.txt
