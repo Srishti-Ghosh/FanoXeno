@@ -1,0 +1,17 @@
+WPRM
+0, 10, 8              ! Lmin, Lmax, lr (Now targeting l=8)
+0.0d0, 50.0d0, 200   ! Emin, Emax, nestep (Zoom in around the NEW resonance)
+39.95d0, 0.50d0       ! Er, width (Update these to the new resonance parameters)
+0.0d0, 180.0d0, 180   ! angmin, angmax, nangstep
+
+ 0  -3.1861887421542621     
+ 1  -1.7959233824293388     
+ 2 -0.58896742477959951     
+ 3  0.42894043413822908     
+ 4   1.2486512082250292     
+ 5   1.8563523591676365     
+ 6   2.2275061586187759     
+ 7   2.2812480234654009     
+ 8   1.5340821530837609     
+ 9  0.48850689142904147     
+ 10  0.22050814036732616 

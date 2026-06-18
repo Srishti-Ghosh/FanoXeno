@@ -316,30 +316,31 @@ def plot_gnuplot_routines():
     run_gnuplot(script_w_3d, "w_3d.plt")
     print(f"✓ Generated: real_w_imag_w_vs_angle.pdf")
 
-    # 10. 3D w Trajectory Rotating GIF (real_w_imag_w_vs_angle_rotating.gif)
-    script_wgif = f"""
-    set terminal gif animate delay 5 size 800,800 optimize
+    # 10. 3D w Trajectory Tube Rotating GIF (real_w_imag_w_vs_angle_rotating.gif)
+    script_w_anim = f"""
+    set terminal gif animate delay 7 size 800,800 optimize
     set output '{FINAL_PLOTS_DIR.resolve()}/real_w_imag_w_vs_angle_rotating.gif'
-    set title "H+Xe: 3D Angular Evolution of w(θ) (l=7)" font "Times New Roman, 20, bold"
-    set xlabel "Re[w(θ)]" font "Times New Roman, 16" offset 0,-1,0
-    set ylabel "Im[w(θ)]" font "Times New Roman, 16" offset 0,-1,0
+    set title "H+Xe: 3D Angular Evolution of w(θ) (l=7)" font "Times New Roman, 20, bold"    
+    set xlabel "Re[w(θ)]" font "Times New Roman, 16" offset 0,-2,0
+    set ylabel "Im[w(θ)]" font "Times New Roman, 16" offset 0,-2,0
     set zlabel "Scattering Angle θ (°)" font "Times New Roman, 16" offset 3,0,0
-    set grid
-    set border linewidth 1.5
-    set ticslevel 0
-    set xyplane at 0.1
+    set grid    
+    set border linewidth 1.5    
+    set xrange [-200:1200]
+    set yrange [-700:700]    
+    set xyplane at 0
     set zrange [0:180]
-    set ztics 30
+    set ztics 30    
     set palette defined (0 "navy", 1 "blue", 2 "cyan", 3 "green", 4 "yellow", 5 "red")
     do for [ang=0:356:4] {{
         set view 60, ang, 1, 1.2
         splot '{WPARAM_FILE.resolve().as_posix()}' using 1:2:(0):3 w lines black lw 2.5 title "X-Y Trace", \\
-          '{WPARAM_FILE.resolve().as_posix()}' using 1:2:3:3 w impulses palette lw 0.5 notitle, \\
-          '{WPARAM_FILE.resolve().as_posix()}' using 1:2:3:3 w lines palette lw 5 title "3D Trajectory"
+              '{WPARAM_FILE.resolve().as_posix()}' using 1:2:3:3 w impulses palette lw 0.5 notitle, \\
+              '{WPARAM_FILE.resolve().as_posix()}' using 1:2:3:3 w lines palette lw 5 title "3D Trajectory"
     }}
     set output
     """
-    run_gnuplot(script_wgif, "rotating_w.plt")
+    run_gnuplot(script_w_anim, "w_3d_anim.plt")
     print(f"✓ Generated: real_w_imag_w_vs_angle_rotating.gif")
 
 # =============================================================================
